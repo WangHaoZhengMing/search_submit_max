@@ -1,0 +1,29 @@
+[package]
+name = "search_submit_max"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+chrono = "0.4"
+chromiumoxide = "0.8"
+futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0.17"
+tokio = { version = "1.0", features = ["full"] }
+toml = "0.9.8"
+reqwest = { version = "0.11", features = ["json"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-openai = { version = "0.32.2", features = ["_api", "chat-completion"] }
+phf = "0.13.1"
+regex = "1.10"
+image = "0.25.9"
+base64 = "0.22.1"
+rust-s3 = "0.37.1"
+rand = "0.9.2"
+config = "0.15.19"
+indicatif = "0.18.3"
+tempfile = "3.24.0"
+tracing-appender = "0.2.4"
