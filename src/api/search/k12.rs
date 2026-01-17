@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use serde_json::json;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::api::send_request::send_api_request;
 use super::SearchResult;
@@ -14,14 +16,15 @@ use super::SearchResult;
 ///
 /// # 返回
 /// 返回搜索结果列表
+
 pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<SearchResult>> {
     let url = "https://tps-tiku-api.staff.xdf.cn/api/questionsimilar/queryByText";
-
     let payload = json!({
         "text": text,
         "subject": subject,
         "stage": stage,
     });
+    debug!("发送 K12 题库搜索请求: stage={}, subject={}, text={}", stage, subject, text);
 
     const MAX_RETRIES: usize = 3;
     let mut last_result = None;
@@ -64,6 +67,7 @@ pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<Se
     ))
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -73,7 +77,9 @@ mod tests {
     async fn test_k12_search() {
         logger::init_test();
 
-        let result = k12_search("3", "61", "你好").await;
+        let result = k12_search("3", "61", "牛顿").await;
+        
+        info!("result:{:?}",result);
 
         assert!(result.is_ok());
         let response = result.unwrap();

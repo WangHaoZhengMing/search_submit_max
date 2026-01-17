@@ -12,6 +12,7 @@ use crate::api::llm::service::LlmService;
 pub use crate::api::submit::submit_title_question;
 use crate::app::models::Question;
 use crate::app::workflow::QuestionCtx;
+use crate::app::workflow::process_single::upload::upload_screenshot_tohaoran;
 use crate::config::AppConfig;
 
 use search::search_with_strategy;
@@ -51,7 +52,7 @@ pub async fn process_single_question(
 
     // === 1. 上传截图 ===
     info!("{} [步骤 1/3] 上传截图", prefix);
-    let screenshot_url = upload_screenshot(&ctx)
+    let screenshot_url = upload_screenshot_tohaoran(&ctx)
         .await
         .with_context(|| format!("{} 上传截图失败", prefix))?;
 

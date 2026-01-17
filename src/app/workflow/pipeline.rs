@@ -34,38 +34,28 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let content = std::fs::read_to_string(path)?;
     let paper: Paper = toml::from_str(&content)?;
 
-    // 加载配置并创建 LLM 服务
     let config = AppConfig::load()?;
     let llm_service = create_llm_service(&config);
     let llm_service = std::sync::Arc::new(llm_service);
 
-    // === 关键点：题目并发 ===
-    // 使用 Vec 保存所有的异步任务句柄
     let mut tasks = Vec::new();
 
     // 限制单张卷子内的并发度（例如限制同时查10个题，防止触发API限流）
-    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(10));
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(1));
 
     for (index, question) in paper.stemlist.iter().enumerate() {
-        // 错开启动时间，避免同时开始处理（每个任务间隔 0.5 秒启动）
         if index > 0 {
-            tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
         }
 
         let sem_clone = semaphore.clone();
         let llm_service_clone = llm_service.clone();
-        let paper_id_clone = paper
-            .page_id
-            .clone()
-            .ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?;
-        let subject_code = paper.subject.clone();
-        let stage = "3".to_string();
         let question_clone = question.clone();
 
         let ctx = QuestionCtx {
-            paper_id: paper_id_clone,
-            subject_code,
-            stage,
+            paper_id: paper.page_id.clone().ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?,
+            subject_code: "54".to_string(),//暂时写死数学
+            stage: "3".to_string(),
             paper_index: 1,
             question_index: index + 1,
             is_title: question_clone.is_title,

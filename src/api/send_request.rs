@@ -70,16 +70,6 @@ pub async fn send_api_request(url: &str, playload: &Value) -> Result<Value> {
         ));
     }
 
-    // 检查响应是否成功（根据 code 或 success 字段）
-    let _is_success = resp_json
-        .get("success")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false)
-        || resp_json
-            .get("code")
-            .and_then(|v| v.as_u64())
-            .map(|c| c == 200)
-            .unwrap_or(false);
 
     Ok(resp_json)
 }

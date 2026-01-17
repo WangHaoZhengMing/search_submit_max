@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde_json::json;
 use tracing::info;
+use std::time::Duration;
 
 use crate::api::send_request::send_api_request;
 use super::SearchResult;
@@ -40,6 +41,7 @@ pub async fn xueke_search(
         );
 
         let result = send_api_request(url, &payload).await?;
+        info!("result:{}",result.to_string());
 
         // 检查 data 字段是否存在且不为空
         if let Some(data) = result.get("data") {

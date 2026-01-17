@@ -3,9 +3,11 @@ use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
 use serde_json::Value;
-use std::fs::File;
+use std::{fs::File, path::Path};
 use std::io::Read;
 use tracing::{error, info};
+
+use crate::app::base64_decode::Base64Decode;
 
 use super::get_credential::get_credential;
 #[allow(dead_code)]
@@ -146,6 +148,96 @@ async fn upload_image_to_cos_with_credential(
         ))
     }
 }
+
+
+
+/// 上传图片到浩然网的 COS (tiku-1396614861)
+/// 
+/// # 参数
+/// * `local_file_path` - 本地图片文件的路径
+/// * `secret_id` - 腾讯云 SecretId (建议从环境变量读取)
+/// * `secret_key` - 腾讯云 SecretKey (建议从环境变量读取)
+pub async fn upload_image_haoranwang(
+    local_file_path: &str,
+) -> Result<String> {
+    info!("开始上传图片流程: {}", local_file_path);
+
+    // --- 配置信息 ---
+    let bucket_name = "tiku-1396614861";
+    let region_name = "ap-beijing";
+    // 你的 COS 访问域名 (通常是 bucket名.cos.region.myqcloud.com)
+    // 如果你有自定义 CDN 域名，可以在这里替换，例如 "https://cdn.haoranwang.com"
+    let base_url = format!("https://{}.cos.{}.myqcloud.com", bucket_name, region_name);
+    
+    let secret_id = "QUtJRDVWa25zdlo2WWJXSHNUek9lamJIbTRDOHRTbnVzaUxr".parse_as_base64()?.to_string();
+    let secret_key = "SE5HOXllN1p6R1BSTjZmNUpRTks2aUJXbXNybFR5R00=".parse_as_base64()?.to_string();
+
+    
+    // --- 1. 创建凭证 ---
+    // 使用永久密钥，不需要 session_token
+    let credentials = Credentials::new(
+        Some(&secret_id),
+        Some(&secret_key),
+        None, 
+        None, 
+        None
+    )?;
+
+    // --- 2. 配置区域 ---
+    let region = Region::Custom {
+        region: region_name.to_string(),
+        endpoint: format!("https://cos.{}.myqcloud.com", region_name),
+    };
+
+    // --- 3. 初始化 Bucket ---
+    let bucket = Bucket::new(bucket_name, region, credentials)?;
+
+    // --- 4. 读取本地文件 ---
+    let path = Path::new(local_file_path);
+    let mut file = File::open(path).context(format!("无法打开文件: {}", local_file_path))?;
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents).context("读取文件内容失败")?;
+
+    // --- 5. 生成云端文件名 (Key) ---
+    // 获取扩展名，默认为 png
+    let extension = path
+        .extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or("png");
+
+    // 生成唯一文件名: images/时间戳-随机数.后缀
+    // 建议加上文件夹前缀(如 images/)，方便管理
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    
+    let object_key = format!(
+        "images/{}-{}.{}", 
+        timestamp, 
+        rand::random::<u32>(), 
+        extension
+    );
+
+    info!("目标云端路径: {}", object_key);
+
+    // --- 6. 执行上传 ---
+    // content_type 设为 "application/octet-stream" 或者根据扩展名自动判断
+    // rust-s3 的 put_object 会自动处理基本的 content-type
+    let response = bucket.put_object(&object_key, &contents).await?;
+
+    // --- 7. 处理结果 ---
+    if response.status_code() == 200 {
+        let final_url = format!("{}/{}", base_url, object_key);
+        info!("图片上传成功！URL: {}", final_url);
+        Ok(final_url)
+    } else {
+        let err_msg = format!("上传失败，状态码: {}", response.status_code());
+        error!("{}", err_msg);
+        Err(anyhow::anyhow!(err_msg))
+    }
+}
+
 #[allow(dead_code)]
 /// 上传图片的完整流程：获取凭证 -> 上传图片 -> 返回 URL
 pub async fn upload_img(local_file_path: &str) -> Result<String> {
