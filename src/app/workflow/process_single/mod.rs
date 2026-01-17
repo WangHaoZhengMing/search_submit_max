@@ -139,6 +139,7 @@ mod tests {
             stage: "3".to_string(),
             paper_index: 1,
             question_index: 1,
+            is_title: false,
             screenshot: question.screenshot.clone(),
         };
 

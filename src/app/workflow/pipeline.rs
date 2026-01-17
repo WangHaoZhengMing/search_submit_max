@@ -47,6 +47,11 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(10));
 
     for (index, question) in paper.stemlist.iter().enumerate() {
+        // 错开启动时间，避免同时开始处理（每个任务间隔 0.5 秒启动）
+        if index > 0 {
+            tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+        }
+
         let sem_clone = semaphore.clone();
         let llm_service_clone = llm_service.clone();
         let paper_id_clone = paper
@@ -63,6 +68,7 @@ async fn process_single_paper(path: &Path) -> Result<()> {
             stage,
             paper_index: 1,
             question_index: index + 1,
+            is_title: question_clone.is_title,
             screenshot: question.screenshot.clone(),
         };
 
