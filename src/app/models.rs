@@ -45,11 +45,6 @@ pub struct Paper {
     pub is_exit: Option<bool>,
 }
 
-impl Paper {
-    pub fn set_paper_id(&mut self, page_id: String) {
-        self.page_id = Some(page_id);
-    }
-}
 
 fn deserialize_year<'de, D>(deserializer: D) -> Result<String, D::Error>
 where

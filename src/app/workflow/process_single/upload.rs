@@ -14,6 +14,7 @@ use crate::app::workflow::QuestionCtx;
 /// 2. 保存到临时文件
 /// 3. 上传到 COS
 /// 4. 返回 CDN URL
+#[allow(dead_code)]
 pub async fn upload_screenshot(ctx: &QuestionCtx) -> Result<String> {
     let prefix = ctx.log_prefix();
     

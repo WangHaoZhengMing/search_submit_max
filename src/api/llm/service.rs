@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use async_openai::{
+    Client,
     config::OpenAIConfig,
     types::chat::{
         ChatCompletionRequestMessage, ChatCompletionRequestMessageContentPartImage,
@@ -10,10 +11,9 @@ use async_openai::{
         ChatCompletionRequestUserMessageContentPart, CreateChatCompletionRequestArgs, FinishReason,
         ImageDetail, ImageUrl,
     },
-    Client,
 };
 
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::api::{llm::message_builder::build_send_messages, search::SearchResult};
 use crate::config::AppConfig;
@@ -120,6 +120,8 @@ impl LlmService {
 
         messages.push(ChatCompletionRequestMessage::User(user_msg));
 
+        info!("message:{}", serde_json::to_string(&messages).unwrap());
+
         // 构建请求
         let request = CreateChatCompletionRequestArgs::default()
             .model(&self.model_name)
@@ -206,7 +208,7 @@ impl LlmService {
         }
 
         let (user_message, system_message, all_images) =
-            build_send_messages(search_results,  target_screenshot).await;
+            build_send_messages(search_results, target_screenshot).await;
 
         let imgs_slice = if all_images.is_empty() {
             None

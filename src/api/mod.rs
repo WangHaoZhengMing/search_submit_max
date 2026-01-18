@@ -1,7 +1,6 @@
 mod send_request;
 pub mod upload;
 pub mod search;
-pub mod loaders;
 pub mod llm;
 pub mod submit;
 

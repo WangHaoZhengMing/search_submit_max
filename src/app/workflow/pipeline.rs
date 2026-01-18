@@ -6,7 +6,7 @@ use tracing::{error, info, warn};
 use crate::app::models::Paper;
 use crate::app::workflow::QuestionCtx;
 use crate::app::workflow::process_single::{
-    create_llm_service, process_single_question, submit_title_question,
+    create_llm_service, process_single_question, submit_matched_question, submit_title_question,
 };
 use crate::config::AppConfig;
 
@@ -53,8 +53,11 @@ async fn process_single_paper(path: &Path) -> Result<()> {
         let question_clone = question.clone();
 
         let ctx = QuestionCtx {
-            paper_id: paper.page_id.clone().ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?,
-            subject_code: "54".to_string(),//暂时写死数学
+            paper_id: paper
+                .page_id
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?,
+            subject_code: "54".to_string(), //暂时写死数学
             stage: "3".to_string(),
             paper_index: 1,
             question_index: index + 1,
@@ -102,6 +105,22 @@ async fn process_single_paper(path: &Path) -> Result<()> {
                             process_result.found_match,
                             process_result.search_source
                         );
+                        //如果匹配成功，则提交题目
+                        if process_result.found_match {
+                            info!("{} 匹配成功，开始提交匹配题目", ctx.log_prefix());
+                            if let Some(matched_data) = process_result.matched_data {
+                                let submit_res = submit_matched_question(
+                                    &ctx,
+                                    &matched_data,
+                                    process_result.search_source.as_deref().unwrap_or("unknown"),
+                                )
+                                .await;
+                                match submit_res {
+                                    Ok(_) => info!("{} 匹配题目提交成功", ctx.log_prefix()),
+                                    Err(e) => error!("{} 匹配题目提交失败: {:?}", ctx.log_prefix(), e),
+                                }
+                            }
+                        }
                         Ok(())
                     }
                     Err(e) => {

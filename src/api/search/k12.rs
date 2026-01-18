@@ -1,4 +1,3 @@
-use std::time::Duration;
 
 use anyhow::Result;
 use serde_json::json;
@@ -42,8 +41,13 @@ pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<Se
             if let Some(arr) = data.as_array() {
                 if !arr.is_empty() {
                     info!("K12 题库搜索完成，找到 {} 条结果", arr.len());
-                    // 解析为 SearchResult 列表
-                    let search_results: Vec<SearchResult> = serde_json::from_value(data.clone())?;
+                    // 解析为 SearchResult 列表，同时保留原始数据
+                    let mut search_results = Vec::new();
+                    for item in arr {
+                        let mut sr: SearchResult = serde_json::from_value(item.clone())?;
+                        sr.raw_data = item.clone();
+                        search_results.push(sr);
+                    }
                     return Ok(search_results);
                 }
             }

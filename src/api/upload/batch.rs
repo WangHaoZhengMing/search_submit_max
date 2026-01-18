@@ -10,6 +10,7 @@ use crate::api::send_request::send_api_request;
 /// 上传附件信息
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct UploadAttachment {
     file_name: String,
     file_type: String,
@@ -20,11 +21,13 @@ struct UploadAttachment {
 /// 批量上传请求
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct BatchUploadRequest {
     upload_attachments: Vec<UploadAttachment>,
 }
 
 /// 转换后的文件信息
+/// #[allow(dead_code)]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConverterFile {
@@ -37,6 +40,7 @@ pub struct ConverterFile {
 
 /// 附件响应信息
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(dead_code)]
 #[serde(rename_all = "camelCase")]
 pub struct AttachmentData {
     pub attachment_id: String,
@@ -51,6 +55,7 @@ pub struct AttachmentData {
 }
 
 /// 批量上传响应
+#[allow(dead_code)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BatchUploadResponse {
     pub success: bool,
@@ -60,6 +65,7 @@ pub struct BatchUploadResponse {
 }
 
 /// 调用批量上传接口，将 PDF URL 提交到服务器进行转换
+#[allow(dead_code)]
 async fn batch_upload_files(pdf_url: &str, file_name: &str) -> Result<Value> {
     let attachment = UploadAttachment {
         file_name: file_name.to_string(),
@@ -82,7 +88,7 @@ async fn batch_upload_files(pdf_url: &str, file_name: &str) -> Result<Value> {
     )
     .await
 }
-
+#[allow(dead_code)]
 /// 写入警告信息到文件
 async fn write_warning_to_file(message: &str) -> Result<()> {
     let mut file = tokio::fs::OpenOptions::new()
@@ -97,7 +103,7 @@ async fn write_warning_to_file(message: &str) -> Result<()> {
     
     Ok(())
 }
-
+#[allow(dead_code)]
 /// 完整流程：上传 PDF -> 批量上传 -> 获取转换后的图片 URLs
 pub async fn upload_and_convert_pdf(local_pdf_path: &str) -> Result<BatchUploadResponse> {
     // 1. 上传 PDF 到腾讯云 COS

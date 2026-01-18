@@ -13,4 +13,18 @@ pub struct SearchResult {
     pub xkw_question_similarity: Option<f64>,
 
     pub img_urls: Option<Vec<String>>,
+
+    #[serde(skip)]
+    pub raw_data: serde_json::Value,
+}
+
+impl Default for SearchResult {
+    fn default() -> Self {
+        Self {
+            question_content: String::new(),
+            xkw_question_similarity: None,
+            img_urls: None,
+            raw_data: serde_json::Value::Null,
+        }
+    }
 }

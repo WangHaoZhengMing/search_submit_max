@@ -1,0 +1,4 @@
+2026-01-18T02:55:02.318308Z ERROR src\app\workflow\pipeline.rs:127: [试卷#1 题目#2] 处理失败: [试卷#1 题目#2] 上传截图失败
+
+Caused by:
+    [试卷#1 题目#2] Base64 解码失败: Invalid symbol 32, offset 100.

@@ -1,7 +1,6 @@
 use anyhow::Result;
 use serde_json::json;
-use tracing::info;
-use std::time::Duration;
+use tracing::{debug, info};
 
 use crate::api::send_request::send_api_request;
 use super::SearchResult;
@@ -41,29 +40,29 @@ pub async fn xueke_search(
         );
 
         let result = send_api_request(url, &payload).await?;
-        info!("result:{}",result.to_string());
+        debug!("result:{}",result.to_string());
 
         // 检查 data 字段是否存在且不为空
         if let Some(data) = result.get("data") {
             if let Some(arr) = data.as_array() {
                 if !arr.is_empty() {
                     info!("学科网图文搜索完成，找到 {} 条结果", arr.len());
-                    // 解析为 SearchResult 列表
-                    let search_results: Vec<SearchResult> = serde_json::from_value(data.clone())?;
+                    // 解析为 SearchResult 列表，同时保留原始数据
+                    let mut search_results = Vec::new();
+                    for item in arr {
+                        let mut sr: SearchResult = serde_json::from_value(item.clone())?;
+                        sr.raw_data = item.clone();
+                        search_results.push(sr);
+                    }
                     return Ok(search_results);
                 }
             }
         }
 
-        info!(
-            "学科网图文搜索返回空结果或缺少 data 字段 (尝试 {}/{})",
-            attempt, MAX_RETRIES
-        );
+        info!("学科网图文搜索返回空结果或缺少 data 字段 (尝试 {}/{})",attempt, MAX_RETRIES);
         last_result = Some(result);
 
-        if attempt < MAX_RETRIES {
-            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-        }
+        if attempt < MAX_RETRIES { tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;}
     }
 
     Err(anyhow::anyhow!(

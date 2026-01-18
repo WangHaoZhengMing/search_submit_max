@@ -7,12 +7,12 @@ page_id = "3422724566465490944"
 url = "https://zujuan.xkw.com/2p3000294.html"
 is_exit = false
 
-[[stemlist]]
-origin = ""
-stem = "一、单选题"
-origin_from_our_bank = []
-is_title = true
-screenshot = ""
+# [[stemlist]]
+# origin = ""
+# stem = "一、单选题"
+# origin_from_our_bank = []
+# is_title = true
+# screenshot = ""
 
 [[stemlist]]
 origin = "25-26七年级上·福建厦门·期中"

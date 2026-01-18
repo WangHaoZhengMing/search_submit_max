@@ -20,7 +20,7 @@ pub fn init(log_dir: &str, file_prefix: &str) -> WorkerGuard {
 
     // 3. 定义控制台层 (Console Layer) - 记录 INFO 及以上
     // 使用 RUST_LOG 环境变量，默认 info
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     let console_layer = fmt::layer()
         .with_writer(std::io::stdout)
         .with_file(false) // 控制台一般不需要文件名，太乱

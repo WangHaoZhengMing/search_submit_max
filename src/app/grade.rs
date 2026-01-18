@@ -1,4 +1,6 @@
 /// 年级枚举
+/// 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash,serde::Serialize, serde::Deserialize)]
 pub enum Grade {
     /// 七年级/初一
@@ -8,7 +10,7 @@ pub enum Grade {
     /// 九年级/初三
     Grade9 = 163,
 }
-
+#[allow(dead_code)]
 impl Grade {
     /// 获取年级代码
     pub fn code(self) -> i16 {
@@ -72,13 +74,13 @@ impl std::fmt::Display for Grade {
         write!(f, "{}", self.name())
     }
 }
-
+#[allow(dead_code)]
 // 为了保持向后兼容，提供函数接口
 /// 获取年级code（向后兼容）
 pub fn get_grade_code(grade_name: &str) -> Option<i16> {
     Grade::from_str(grade_name).map(|g| g.code())
 }
-
+#[allow(dead_code)]
 /// 智能查找年级code（向后兼容）
 pub fn find_grade_code(name: &str) -> Option<i16> {
     Grade::find(name).map(|g| g.code())
