@@ -1,49 +1,34 @@
 //! 单题处理流程
 //!
-//! 完整流程：上传 → 搜索 → LLM 匹配 → 提交
+//! 完整流程：上传 → 搜索 → LLM 匹配 → 兜底
 
+mod build_ques_llm;
 mod search;
 mod upload;
+pub(crate) mod result;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use tracing::{info, warn};
 
 use crate::api::llm::service::LlmService;
-use crate::api::search::{k12::k12_search, xueke::xueke_search};
-pub use crate::api::submit::submit_title_question;
-pub use crate::api::submit::submit_matched_question;
+pub use crate::api::submit::{submit_matched_question, submit_title_question};
 use crate::app::models::Question;
 use crate::app::workflow::QuestionCtx;
+use crate::app::workflow::process_single::build_ques_llm::build_question_via_llm;
+use crate::app::workflow::process_single::result::{BuildResult, SearchSource, StepError};
+use crate::app::workflow::process_single::search::{k12_fallback, search_k12, MatchOutput};
 use crate::app::workflow::process_single::upload::upload_screenshot_tohaoran;
 use crate::config::AppConfig;
 
-// use search::search_with_strategy; 
-// use upload::upload_screenshot;
-
-/// 单题处理结果
-#[derive(Debug)]
-pub struct ProcessResult {
-    /// 是否找到匹配的原题
-    pub found_match: bool,
-    /// 匹配的题目索引（如果找到）
-    pub matched_index: Option<usize>,
-    /// 搜索源（"k12" 或 "xueke"）
-    pub search_source: Option<String>,
-    /// 匹配题目的原始数据
-    pub matched_data: Option<serde_json::Value>,
-    /// 上传的截图 URL
-    pub screenshot_url: String,
-}
-
-
+/// 单题处理主流程：上传 → 搜索（主链路）→ 搜索（fallback）→ LLM 构建 → 人工兜底
 pub async fn process_single_question(
     _question: &Question,
     ctx: &QuestionCtx,
     llm_service: &LlmService,
     ocr_text: &str,
-) -> Result<ProcessResult> {
+) -> Result<BuildResult> {
     let prefix = ctx.log_prefix();
-    info!("{} ========== 开始处理题目 ==========", prefix);
+    info!("{} ========== 开始处理题目 ==========" , prefix);
 
     // === 1. 上传截图 ===
     info!("{} [步骤 1/3] 上传截图", prefix);
@@ -51,99 +36,69 @@ pub async fn process_single_question(
         .await
         .with_context(|| format!("{} 上传截图失败", prefix))?;
 
-    // === 2. 搜索与匹配 (策略：K12 -> LLM Check -> if fail -> Xueke -> LLM Check) ===
-    let mut final_matched_index = None;
-    let mut final_search_results = Vec::new();
-    let mut search_source = None;
-
-    // --- 尝试 K12 ---
-    info!("{} [步骤 2.1] 尝试 K12 搜索", prefix);
-    let k12_success = match k12_search(&ctx.stage, &ctx.subject_code, ocr_text).await {
-        Ok(results) if !results.is_empty() => {
-             info!("{} K12 搜索找到 {} 条结果，开始 LLM 匹配", prefix, results.len());
-             match llm_service.find_best_match_index(&results, &screenshot_url).await {
-                 Ok(Some(idx)) => {
-                     info!("{} K12 结果匹配成功！索引: {}", prefix, idx);
-                     final_matched_index = Some(idx);
-                     final_search_results = results;
-                     search_source = Some("k12".to_string());
-                     true
-                 },
-                 Ok(None) => {
-                     info!("{} K12 结果经 LLM 判断均不匹配", prefix);
-                     false
-                 },
-                 Err(e) => {
-                     warn!("{} K12 结果 LLM 匹配过程出错: {:?}", prefix, e);
-                     false
-                 }
-             }
-        },
-        Ok(_) => {
-            info!("{} K12 搜索无结果", prefix);
-            false
-        },
+    // === 2. 搜索与匹配 (K12 -> 学科网) ===
+    match search_k12(ctx, llm_service, ocr_text, &screenshot_url).await {
+        Ok(found) => return Ok(to_build_result(found, screenshot_url)),
         Err(e) => {
-            warn!("{} K12 搜索请求失败: {:?}", prefix, e);
-            false
-        }
-    };
-
-    // --- 如果 K12 失败，尝试学科网 ---
-    if !k12_success {
-        info!("{} [步骤 2.2] K12 未匹配，尝试学科网搜索", prefix);
-        // 学科网搜索比较贵，只有在其前面步骤失败时才调用
-        match xueke_search(&ctx.stage, &ctx.subject_code, None, Some(ocr_text)).await {
-            Ok(results) if !results.is_empty() => {
-                info!("{} 学科网搜索找到 {} 条结果，开始 LLM 匹配", prefix, results.len());
-                match llm_service.find_best_match_index(&results, &screenshot_url).await {
-                    Ok(Some(idx)) => {
-                        info!("{} 学科网结果匹配成功！索引: {}", prefix, idx);
-                        final_matched_index = Some(idx);
-                        final_search_results = results;
-                        search_source = Some("xueke".to_string());
-                    },
-                    Ok(None) => {
-                        info!("{} 学科网结果经 LLM 判断均不匹配", prefix);
-                    },
-                     Err(e) => {
-                         warn!("{} 学科网结果 LLM 匹配过程出错: {:?}", prefix, e);
-                     }
-                }
-            },
-           Ok(_) => {
-                info!("{} 学科网搜索无结果", prefix);
-            },
-            Err(e) => {
-                warn!("{} 学科网搜索请求失败: {:?}", prefix, e);
+            log_step_error(&prefix, SearchSource::K12, &e);
+            if matches!(e, StepError::InfraError(_) | StepError::RetryExhausted) {
+                return Err(anyhow!("{} 主链路失败: {:?}", prefix, e));
             }
         }
     }
 
-    // === 3. 构建结果 ===
-    match final_matched_index {
-        Some(idx) => {
-             // 获取匹配题目的原始数据
-             let matched_data = final_search_results.get(idx).map(|r| r.raw_data.clone());
-             
-             Ok(ProcessResult {
-                found_match: true,
-                matched_index: Some(idx),
-                search_source,
-                matched_data,
+    info!("{} [步骤 2/3] K12 未命中，进入 fallback", prefix);
+
+    match k12_fallback(ctx, llm_service, ocr_text, &screenshot_url).await {
+        Ok(found) => return Ok(to_build_result(found, screenshot_url)),
+        Err(e) => {
+            log_step_error(&prefix, SearchSource::Xueke, &e);
+            if matches!(e, StepError::InfraError(_) | StepError::RetryExhausted) {
+                return Err(anyhow!("{} fallback 阶段失败: {:?}", prefix, e));
+            }
+        }
+    }
+
+    // === 3. LLM 构建 / 人工兜底 ===
+    info!("{} [步骤 3/3] 搜索链路未命中，尝试 LLM 构建", prefix);
+    match build_question_via_llm(ctx, ocr_text, &screenshot_url).await {
+        Ok(question) => {
+            info!("{} LLM 构建成功，标记为 Generated", prefix);
+            Ok(BuildResult::Generated { question, screenshot_url })
+        }
+        Err(e) => {
+            warn!(
+                target: "failed_questions",
+                "{} 搜索与构建均未命中，人工处理 | paper_id={} | idx={} | reason={:?}",
+                prefix,
+                ctx.paper_id,
+                ctx.not_include_title_index,
+                e
+            );
+            Ok(BuildResult::ManualRequired {
+                paper_id: ctx.paper_id.clone(),
+                index: ctx.not_include_title_index,
                 screenshot_url,
-            })
-        },
-        None => {
-            info!("{} 最终未找到匹配题目", prefix);
-            Ok(ProcessResult {
-                found_match: false,
-                matched_index: None,
-                search_source: None,
-                matched_data: None,
-                screenshot_url,
+                reason: format!("{:?}", e),
             })
         }
+    }
+}
+
+fn to_build_result(found: MatchOutput, screenshot_url: String) -> BuildResult {
+    BuildResult::Found {
+        source: found.source,
+        matched_index: found.matched_index,
+        matched_data: found.matched_data,
+        screenshot_url,
+    }
+}
+
+fn log_step_error(prefix: &str, source: SearchSource, err: &StepError) {
+    match err {
+        StepError::InfraError(e) => warn!("{} {:?} 请求异常: {:?}", prefix, source, e),
+        StepError::RetryExhausted => warn!("{} {:?} 重试耗尽", prefix, source),
+        other => info!("{} {:?} 未命中，原因: {:?}", prefix, source, other),
     }
 }
 
@@ -174,12 +129,31 @@ mod tests {
             screenshot: "data:image/png;base64,iVBORw0KGgo...".to_string(),
         };
 
-        let ctx = QuestionCtx {paper_id:"test_paper_id".to_string(),subject_code:"61".to_string(),stage:"3".to_string(),paper_index:1,question_index:1,is_title:false,screenshot:question.screenshot.clone(), not_include_title_index: 1 };
+        let ctx = QuestionCtx {
+            paper_id: "test_paper_id".to_string(),
+            subject_code: "61".to_string(),
+            stage: "3".to_string(),
+            paper_index: 1,
+            question_index: 1,
+            is_title: false,
+            screenshot: question.screenshot.clone(),
+            not_include_title_index: 1,
+        };
 
         let result = process_single_question(&question, &ctx, &llm_service, "测试文本")
             .await
             .expect("处理失败");
 
-        println!("处理结果: {:?}", result);
+        match result {
+            BuildResult::Found { source, matched_index, .. } => {
+                println!("匹配成功 | source={:?} | idx={}", source, matched_index);
+            }
+            BuildResult::Generated { .. } => {
+                println!("LLM 构建成功");
+            }
+            BuildResult::ManualRequired { .. } => {
+                println!("需人工介入");
+            }
+        }
     }
 }

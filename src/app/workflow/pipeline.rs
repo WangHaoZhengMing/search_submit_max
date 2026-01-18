@@ -9,6 +9,7 @@ use crate::app::workflow::QuestionCtx;
 use crate::app::workflow::process_single::{
     create_llm_service, process_single_question, submit_matched_question, submit_title_question,
 };
+use crate::app::workflow::process_single::result::BuildResult;
 use crate::config::AppConfig;
 
 pub async fn run() -> Result<(), anyhow::Error> {
@@ -105,26 +106,16 @@ async fn process_single_paper(path: &Path) -> Result<()> {
                     ).await;
 
                     match result {
-                        Ok(process_result) => {
-                            info!(
-                                "{} 处理完成 - 找到匹配: {}, 来源: {:?}",
-                                ctx.log_prefix(),
-                                process_result.found_match,
-                                process_result.search_source
-                            );
-                            
-                            if process_result.found_match {
-                                if let Some(matched_data) = process_result.matched_data {
-                                    let source = process_result.search_source.unwrap_or_else(|| "unknown".to_string());
-                                    Ok((index, question, ctx, SubmitAction::Matched(matched_data, source)))
-                                } else {
-                                    tracing::warn!(target: "failed_questions", "匹配成功但无数据 | 试卷: {} | page_id: {} | 题号: {}", path_display, ctx.paper_id, ctx.not_include_title_index);
-                                    Ok((index, question, ctx, SubmitAction::None))
-                                }
-                            } else {
-                                tracing::warn!(target: "failed_questions", "无匹配 | 试卷: {} | page_id: {} | 题号: {}", path_display, ctx.paper_id, ctx.not_include_title_index);
-                                Ok((index, question, ctx, SubmitAction::None))
-                            }
+                        Ok(BuildResult::Found { matched_data, source, .. }) => {
+                            Ok((index, question, ctx, SubmitAction::Matched(matched_data, source.as_str().to_string())))
+                        }
+                        Ok(BuildResult::Generated { .. }) => {
+                            info!("{} LLM 构建完成，暂不自动提交", ctx.log_prefix());
+                            Ok((index, question, ctx, SubmitAction::None))
+                        }
+                        Ok(BuildResult::ManualRequired { reason, .. }) => {
+                            tracing::warn!(target: "failed_questions", "需人工 | 试卷: {} | page_id: {} | 题号: {} | 原因: {}", path_display, ctx.paper_id, ctx.not_include_title_index, reason);
+                            Ok((index, question, ctx, SubmitAction::None))
                         }
                         Err(e) => {
                             error!("{} 处理失败: {:?}", ctx.log_prefix(), e);
