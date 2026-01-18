@@ -1,6 +1,6 @@
 pub mod pipeline;
 pub mod process_single;
-
+#[derive(Debug, Clone)]
 pub struct QuestionCtx {
     pub paper_id: String,
     /// 科目代码
@@ -14,6 +14,8 @@ pub struct QuestionCtx {
     /// 是否为标题题目
     pub is_title: bool,
     pub screenshot: String,
+
+    pub not_include_title_index: usize,// 上面的question_index 是包含标题题目的索引，这个是不包含标题题目的索引
 }
 
 impl QuestionCtx {

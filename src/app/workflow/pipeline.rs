@@ -1,7 +1,9 @@
 use std::path::Path;
-
+use std::sync::Arc;
+use chrono::Duration;
+use futures::StreamExt;
 use anyhow::Result;
-use tracing::{error, info, warn};
+use tracing::{error, info}; // Remove unused 'warn'
 
 use crate::app::models::Paper;
 use crate::app::workflow::QuestionCtx;
@@ -35,125 +37,111 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let paper: Paper = toml::from_str(&content)?;
 
     let config = AppConfig::load()?;
-    let llm_service = create_llm_service(&config);
-    let llm_service = std::sync::Arc::new(llm_service);
+    let llm_service = Arc::new(create_llm_service(&config));
+    let page_id = paper.page_id.clone().ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?;
+    let subject_code = "54".to_string(); // 暂时写死数学
+    let path_display = path.display().to_string();
 
+    // 预处理题目上下文，确保序号正确
     let mut tasks = Vec::new();
+    let mut pure_question_index = 0;
 
-    // 限制单张卷子内的并发度（例如限制同时查10个题，防止触发API限流）
-    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(1));
-
-    for (index, question) in paper.stemlist.iter().enumerate() {
-        if index > 0 {
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
-        }
-
-        let sem_clone = semaphore.clone();
-        let llm_service_clone = llm_service.clone();
-        let question_clone = question.clone();
-
+    for (i, question) in paper.stemlist.into_iter().enumerate() {
         let ctx = QuestionCtx {
-            paper_id: paper
-                .page_id
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?,
-            subject_code: "54".to_string(), //暂时写死数学
+            paper_id: page_id.clone(),
+            subject_code: subject_code.clone(),
             stage: "3".to_string(),
             paper_index: 1,
-            question_index: index + 1,
-            is_title: question_clone.is_title,
+            question_index: i + 1,
+            is_title: question.is_title,
             screenshot: question.screenshot.clone(),
+            not_include_title_index: if question.is_title { pure_question_index } else { pure_question_index += 1; pure_question_index },
         };
+        println!("{:?},{}",&ctx.question_index, &ctx.not_include_title_index);
+        tasks.push((question, ctx));
+    }
 
-        // tokio::spawn 开启并发任务
-        let task = tokio::spawn(async move {
-            // 获取信号量许可（控制并发数）
-            let _permit = sem_clone.acquire().await.unwrap();
 
-            // 判断是否为标题题目
-            if question_clone.is_title {
-                info!("{} 检测到标题题目，直接提交", ctx.log_prefix());
 
-                // 直接提交标题题目
-                let result = submit_title_question(&question_clone, &ctx).await;
+    // 创建并发流
+    let results: Vec<_> = futures::stream::iter(tasks.into_iter().enumerate())
+        .map(|(index, (question, ctx))| {
+            // 克隆必要的上下文
+            let llm_service = llm_service.clone();
+            let path_display = path_display.clone();
 
-                match result {
-                    Ok(_) => {
-                        info!("{} 标题题目提交成功", ctx.log_prefix());
-                        Ok(())
-                    }
-                    Err(e) => {
-                        error!("{} 标题题目提交失败: {:?}", ctx.log_prefix(), e);
-                        Err(e)
-                    }
+            async move {
+                 // 延迟启动，避免瞬时并发过高
+                if index > 0 {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
                 }
-            } else {
-                // 非标题题目：执行核心逻辑：上传 -> 搜索 -> LLM -> 提交
-                let result = process_single_question(
-                    &question_clone,
-                    &ctx,
-                    &llm_service_clone,
-                    &question_clone.stem,
-                )
-                .await;
-
-                match result {
-                    Ok(process_result) => {
-                        info!(
-                            "{} 处理完成 - 找到匹配: {}, 来源: {:?}",
-                            ctx.log_prefix(),
-                            process_result.found_match,
-                            process_result.search_source
-                        );
-                        //如果匹配成功，则提交题目
-                        if process_result.found_match {
-                            info!("{} 匹配成功，开始提交匹配题目", ctx.log_prefix());
-                            if let Some(matched_data) = process_result.matched_data {
-                                let submit_res = submit_matched_question(
-                                    &ctx,
-                                    &matched_data,
-                                    process_result.search_source.as_deref().unwrap_or("unknown"),
-                                )
-                                .await;
-                                match submit_res {
-                                    Ok(_) => info!("{} 匹配题目提交成功", ctx.log_prefix()),
-                                    Err(e) => error!("{} 匹配题目提交失败: {:?}", ctx.log_prefix(), e),
-                                }
-                            }
+                
+                // 处理单个题目逻辑
+                if ctx.is_title {
+                    info!("{} 检测到标题题目，直接提交", ctx.log_prefix());
+                    let result = submit_title_question(&question, &ctx).await;
+                    match result {
+                        Ok(_) => {
+                            info!("{} 标题题目提交成功", ctx.log_prefix());
+                            Ok(())
                         }
-                        Ok(())
+                        Err(e) => {
+                            error!("{} 标题题目提交失败: {:?}", ctx.log_prefix(), e);
+                            Err(e)
+                        }
                     }
-                    Err(e) => {
-                        error!("{} 处理失败: {:?}", ctx.log_prefix(), e);
-                        Err(e)
+                } else {
+                    let result = process_single_question(
+                        &question, &ctx, &llm_service, &question.stem
+                    ).await;
+
+                    match result {
+                        Ok(process_result) => {
+                            info!(
+                                "{} 处理完成 - 找到匹配: {}, 来源: {:?}",
+                                ctx.log_prefix(),
+                                process_result.found_match,
+                                process_result.search_source
+                            );
+                            
+                            if process_result.found_match {
+                                if let Some(matched_data) = process_result.matched_data {
+                                    let source = process_result.search_source.as_deref().unwrap_or("unknown");
+                                    match submit_matched_question(&ctx, &matched_data, source).await {
+                                        Ok(_) => info!("{} 匹配题目提交成功", ctx.log_prefix()),
+                                        Err(e) => {
+                                            let err_msg = format!("提交失败: {:?}", e);
+                                            error!("{} {}", ctx.log_prefix(), err_msg);
+                                            tracing::warn!(target: "failed_questions", "提交失败 | 试卷: {} | page_id: {} | 题号: {} | 原因: {:?}", path_display, ctx.paper_id, ctx.not_include_title_index, e);
+                                        }
+                                    }
+                                }
+                            } else {
+                                tracing::warn!(target: "failed_questions", "无匹配 | 试卷: {} | page_id: {} | 题号: {}", path_display, ctx.paper_id, ctx.not_include_title_index);
+                            }
+                            Ok(())
+                        }
+                        Err(e) => {
+                            error!("{} 处理失败: {:?}", ctx.log_prefix(), e);
+                            tracing::warn!(target: "failed_questions", "流程异常 | 试卷: {} | page_id: {} | 题号: {} | 原因: {:?}", path_display, ctx.paper_id, ctx.not_include_title_index, e);
+                            Err(e)
+                        }
                     }
                 }
             }
-        });
-        tasks.push(task);
-    }
+        })
+        .buffer_unordered(23) // 控制并发数为 20
+        .collect()
+        .await;
 
-    // 等待这张卷子的所有题目跑完
-    // join_all 会等待所有 Future 完成
-    let results = futures::future::join_all(tasks).await;
-
-    // 检查结果：统计这张卷子成功多少，失败多少
+    // 统计结果
     let mut success_count = 0;
     let mut failure_count = 0;
 
     for res in results {
         match res {
-            Ok(Ok(_)) => {
-                success_count += 1;
-            }
-            Ok(Err(e)) => {
-                failure_count += 1;
-                warn!("题目处理失败: {:?}", e);
-            }
-            Err(e) => {
-                failure_count += 1;
-                error!("任务执行失败（Panic）: {:?}", e);
-            }
+            Ok(_) => success_count += 1,
+            Err(_) => failure_count += 1,
         }
     }
 

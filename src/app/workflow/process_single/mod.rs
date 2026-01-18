@@ -174,15 +174,7 @@ mod tests {
             screenshot: "data:image/png;base64,iVBORw0KGgo...".to_string(),
         };
 
-        let ctx = QuestionCtx {
-            paper_id: "test_paper_id".to_string(),
-            subject_code: "61".to_string(),
-            stage: "3".to_string(),
-            paper_index: 1,
-            question_index: 1,
-            is_title: false,
-            screenshot: question.screenshot.clone(),
-        };
+        let ctx = QuestionCtx {paper_id:"test_paper_id".to_string(),subject_code:"61".to_string(),stage:"3".to_string(),paper_index:1,question_index:1,is_title:false,screenshot:question.screenshot.clone(), not_include_title_index: 1 };
 
         let result = process_single_question(&question, &ctx, &llm_service, "测试文本")
             .await

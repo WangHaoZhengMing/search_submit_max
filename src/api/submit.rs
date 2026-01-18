@@ -92,15 +92,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要真实环境网络
     async fn test_submit_matched_question() {
-        let ctx = QuestionCtx {
-            paper_id: "3422724566465490944".to_string(),
-            subject_code: "54".to_string(),
-            stage: "3".to_string(),
-            paper_index: 1,
-            question_index: 2,
-            is_title: false,
-            screenshot: "".to_string(),
-        };
+        let ctx = QuestionCtx {paper_id:"3422724566465490944".to_string(),subject_code:"54".to_string(),stage:"3".to_string(),paper_index:1,question_index:2,is_title:false,screenshot:"".to_string(), not_include_title_index: 1 };
 
         // 模拟搜索到的原始数据 (基于提供的示例)
         // 使用 from_str 避免 json! 宏的递归深度限制
