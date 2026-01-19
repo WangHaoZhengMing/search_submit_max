@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 
 mod api;
 mod app;
@@ -15,7 +15,5 @@ async fn main() -> anyhow::Result<()> {
         tracing::error!("Pipeline 执行失败: {:?}", e);
         return Err(e);
     }
-    info!("========== 所有试卷处理完成 ==========");
-
     Ok(())
 }

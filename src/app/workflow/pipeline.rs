@@ -1,9 +1,13 @@
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 use futures::StreamExt;
 use anyhow::Result;
-use tracing::{error, info}; // Remove unused 'warn'
+use serde_json::Value;
+use tokio::time::sleep;
+use tracing::{error, info}; 
 
+use crate::api::submit::submit_generated_question;
 use crate::app::models::Paper;
 use crate::app::workflow::QuestionCtx;
 use crate::app::workflow::process_single::{
@@ -27,9 +31,6 @@ pub async fn run() -> Result<(), anyhow::Error> {
 
     info!("扫描到 {} 个待处理试卷文件", paths.len());
 
-    // 并发处理多套试卷
-    // 注意：单张试卷内部已经是并发处理（23并发），所以这里控制试卷级别的并发数不宜过高
-    // 设为 3，防止系统资源或 API 限制被撑爆
     futures::stream::iter(paths)
         .map(|path| async move {
             info!("开始处理试卷: {:?}", path);
@@ -72,46 +73,43 @@ async fn process_single_paper(path: &Path) -> Result<()> {
             screenshot: question.screenshot.clone(),
             not_include_title_index: if question.is_title { pure_question_index } else { pure_question_index += 1; pure_question_index },
         };
-        // println!("{:?},{}",&ctx.question_index, &ctx.not_include_title_index);
         tasks.push((question, ctx));
     }
 
     enum SubmitAction {
         Title,
-        Matched(serde_json::Value, String),
+        Matched(Value),
+        Generated(Value),
         None,
     }
 
-    // 创建并发流 - 只负责处理，不负责提交
     let results: Vec<_> = futures::stream::iter(tasks.into_iter().enumerate())
+        .map(|item| async move {
+            let (index, _) = item;
+            if index > 0 {
+                sleep(Duration::from_millis(500)).await;
+            }
+                item 
+        })
+        .buffered(1) 
         .map(|(index, (question, ctx))| {
             // 克隆必要的上下文
             let llm_service = llm_service.clone();
             let path_display = path_display.clone();
 
             async move {
-                 // 延迟启动，避免瞬时并发过高
-                if index > 0 {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                }
-                
-                // 处理单个题目逻辑
                 if ctx.is_title {
-                    info!("{} 检测到标题题目，准备提交", ctx.log_prefix());
-                    // 标题题目直接标记为需要提交Title
                     Ok((index, question, ctx, SubmitAction::Title))
                 } else {
-                    let result = process_single_question(
-                        &question, &ctx, &llm_service, &question.stem
-                    ).await;
+                    let result = process_single_question(&question, &ctx, &llm_service, &question.stem).await;
 
                     match result {
-                        Ok(BuildResult::Found { matched_data, source, .. }) => {
-                            Ok((index, question, ctx, SubmitAction::Matched(matched_data, source.as_str().to_string())))
+                        Ok(BuildResult::Found { matched_data, .. }) => {
+                            Ok((index, question, ctx, SubmitAction::Matched(matched_data)))
                         }
-                        Ok(BuildResult::Generated { .. }) => {
-                            info!("{} LLM 构建完成，暂不自动提交", ctx.log_prefix());
-                            Ok((index, question, ctx, SubmitAction::None))
+                        Ok(BuildResult::Generated { question: generated_data, .. }) => {
+                            info!("{} LLM 构建完成", ctx.log_prefix());
+                            Ok((index, question, ctx, SubmitAction::Generated(generated_data)))
                         }
                         Ok(BuildResult::ManualRequired { reason, .. }) => {
                             tracing::warn!(target: "failed_questions", "需人工 | 试卷: {} | page_id: {} | 题号: {} | 原因: {}", path_display, ctx.paper_id, ctx.not_include_title_index, reason);
@@ -126,7 +124,7 @@ async fn process_single_paper(path: &Path) -> Result<()> {
                 }
             }
         })
-        .buffer_unordered(23) // 控制并发数为
+        .buffer_unordered(23)
         .collect()
         .await;
 
@@ -134,77 +132,66 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let mut success_count = 0;
     let mut failure_count = 0;
     
-    // 收集成功的任务
-    let mut valid_submissions = Vec::new();
+    // 使用 filter_map 一次性完成 拆包 + 过滤 + 错误计数
+    let mut valid_submissions: Vec<_> = results
+        .into_iter()
+        .filter_map(|res| match res {
+            Ok(item) => Some(item),
+            Err(_e) => {
+                // 如果需要，可以在这里打印流处理阶段的错误日志
+                failure_count += 1;
+                None
+            }
+        })
+        .collect();
 
-    for res in results {
-        match res {
-            Ok(item) => valid_submissions.push(item),
-            Err(_) => failure_count += 1,
-        }
-    }
-
-    // 按照原始 index 排序，确保提交顺序
+    // 按照原始 index 排序
     valid_submissions.sort_by_key(|(index, _, _, _)| *index);
 
-    info!("试卷 {:?} 处理阶段完成，开始按顺序提交 {} 个任务", path, valid_submissions.len());
+    info!("试卷 {:?} 预处理完成，准备顺序提交 {} 个任务 (预处理失败: {})", 
+        path, valid_submissions.len(), failure_count);
 
     // 顺序提交
     for (_index, question, ctx, action) in valid_submissions {
-        let result = match action {
+        let submit_result = match action {
             SubmitAction::Title => {
-                let res = submit_title_question(&question, &ctx).await;
-                match res {
-                    Ok(_) => {
-                        info!("{} 标题题目提交成功", ctx.log_prefix());
-                        Ok(())
-                    },
-                    Err(e) => {
-                         error!("{} 标题题目提交失败: {:?}", ctx.log_prefix(), e);
-                         Err(e)
-                    }
-                }
+                submit_title_question(&question, &ctx).await
+                    .map(|_| info!("{} 标题提交成功", ctx.log_prefix())) // 顺手打日志
             },
-            SubmitAction::Matched(ref matched_data, ref source) => {
-                let res = submit_matched_question(&ctx, &matched_data, &source).await;
-                match res {
-                    Ok(_) => {
-                        info!("{} 匹配题目提交成功", ctx.log_prefix());
-                        Ok(())
-                    }
-                    Err(e) => {
-                        let err_msg = format!("提交失败: {:?}", e);
-                        error!("{} {}", ctx.log_prefix(), err_msg);
-                        tracing::warn!(target: "failed_questions", "提交失败 | 试卷: {} | page_id: {} | 题号: {} | 原因: {:?}", path.display(), ctx.paper_id, ctx.not_include_title_index, e);
-                        Err(e)
-                    }
-                }
+            
+            // 合并 Matched 和 Generated，逻辑是一样的
+            SubmitAction::Matched(ref data)  => {
+                submit_matched_question(&ctx, data).await
+                    .map(|_| info!("{} 题目提交成功", ctx.log_prefix()))
             },
-            SubmitAction::None => {
-                // 已经处理过，这里不做操作
-                Ok(())
-            }
+             SubmitAction::Generated(ref data)  => {
+                submit_generated_question(&ctx, data).await
+                    .map(|_| info!("{} 题目提交成功", ctx.log_prefix()))
+            },
+            SubmitAction::None => Ok(()), 
         };
 
-        if result.is_ok() {
-            success_count += 1;
-        } else {
-            // 注意：这里算作失败吗？如果是None算成功，如果是提交失败算失败。
-            // 上面的 result.is_ok() 对于 None 是 Ok(())。
-            // 对于 Title/Matched 失败是 Err。
-            if matches!(action, SubmitAction::None) {
-                // None 不算成功也不算失败？或者已经在处理阶段记录了失败/无匹配
-                // 这里我们暂且只统计"提交成功"的数量
-            } else {
-                failure_count += 1;
+        match submit_result {
+            Ok(_) => {
+                if !matches!(action, SubmitAction::None) {
+                    success_count += 1;
+                }
+            },
+            Err(e) => {
+                failure_count += 1; // 累加提交阶段的失败
+                let err_msg = format!("提交失败: {:?}", e);
+                error!("{} {}", ctx.log_prefix(), err_msg);
+                
+                // 只有非 Title 的才记录到 failed_questions 业务日志表里？看你需求
+                if !matches!(action, SubmitAction::Title) {
+                     tracing::warn!(target: "failed_questions", "提交失败 | 试卷: {} | page_id: {} | 题号: {} | 原因: {:?}", 
+                        path.display(), ctx.paper_id, ctx.not_include_title_index, e);
+                }
             }
         }
     }
 
-    info!(
-        "试卷 {:?} 流程结束 - 提交成功: {}, 流程失败/提交失败: {}",
-        path, success_count, failure_count
-    );
+    info!("当前试卷全部完成: 成功提交 {}, 总失败 {}", success_count, failure_count);
 
     Ok(())
 }

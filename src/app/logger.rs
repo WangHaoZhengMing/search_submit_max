@@ -7,24 +7,8 @@ use tracing_subscriber::{
 };
 
 /// 初始化日志系统
-/// 返回 WorkerGuard，必须在 main 函数中一直持有它，否则文件日志不生效
-/// 现在返回 Vec<WorkerGuard> 以管理多个文件输出的 guard
-pub fn init(log_dir: &str, file_prefix: &str) -> Vec<WorkerGuard> {
+pub fn init(log_dir: &str, _file_prefix: &str) -> Vec<WorkerGuard> {
     let mut guards = Vec::new();
-
-    // === 1. 系统错误日志 (logs/search_submit.YYYY-MM-DD) ===
-    // 记录所有系统级别的 ERROR
-    let sys_appender = tracing_appender::rolling::daily(log_dir, file_prefix);
-    let (sys_writer, sys_guard) = tracing_appender::non_blocking(sys_appender);
-    guards.push(sys_guard);
-
-    let sys_layer = fmt::layer()
-        .with_writer(sys_writer)
-        .with_ansi(false)
-        .with_file(true)
-        .with_line_number(true)
-        .with_target(false)
-        .with_filter(tracing::metadata::LevelFilter::ERROR);
 
     // === 2. 失败题目清单日志 (logs/failed_questions.YYYY-MM-DD) ===
     // 专门记录 target="failed_questions" 的日志
@@ -32,36 +16,40 @@ pub fn init(log_dir: &str, file_prefix: &str) -> Vec<WorkerGuard> {
     let (fail_writer, fail_guard) = tracing_appender::non_blocking(fail_appender);
     guards.push(fail_guard);
 
-    // 自定义过滤器：只接受 target 为 "failed_questions" 的日志
+    // 文件层过滤器：只允许 target 为 "failed_questions" 的通过
     let fail_layer = fmt::layer()
         .with_writer(fail_writer)
-        .with_ansi(false)
-        .with_file(false) // 清单文件不需要代码行号
+        .with_ansi(false) // 文件里不要颜色
+        .with_file(false) 
         .with_line_number(false)
-        .with_target(false) // 不需要显示 target 名字
-        // .with_format(fmt::format().compact()) // 使用紧凑格式
+        .with_target(false) 
         .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
             metadata.target() == "failed_questions"
         }));
 
     // === 3. 控制台输出 ===
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    // 关键修改在这里：
+    // 1. 获取默认的环境变量配置（比如 RUST_LOG=debug）或默认为 "info"
+    // 2. 强制添加一条指令：failed_questions=off
+    // 这样控制台层会接收所有日志，但唯独屏蔽掉 failed_questions
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"))
+        .add_directive("failed_questions=off".parse().expect("Directive parse failed"));
+
     let console_layer = fmt::layer()
         .with_writer(std::io::stdout)
         .with_file(false)
         .with_line_number(false)
-        .with_filter(env_filter);
+        .with_filter(env_filter); // 应用上面修改后的过滤器
 
     // 注册所有层
     tracing_subscriber::registry()
         .with(console_layer)
-        .with(sys_layer)
         .with(fail_layer)
         .init();
 
     guards
 }
-
 #[allow(dead_code)]
 pub fn init_test() {
     tracing_subscriber::registry()

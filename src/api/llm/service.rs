@@ -13,9 +13,9 @@ use async_openai::{
     },
 };
 
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
-use crate::api::{llm::message_builder::build_send_messages, search::SearchResult};
+use crate::{api::{llm::message_builder::build_send_messages, search::SearchResult}, config::get};
 use crate::config::AppConfig;
 
 /// LLM 服务
@@ -120,14 +120,14 @@ impl LlmService {
 
         messages.push(ChatCompletionRequestMessage::User(user_msg));
 
-        info!("message:{}", serde_json::to_string(&messages).unwrap());
+        debug!("message:{}", serde_json::to_string(&messages).unwrap());
 
         // 构建请求
         let request = CreateChatCompletionRequestArgs::default()
             .model(&self.model_name)
             .messages(messages)
             .temperature(0.3)
-            .max_tokens(500u32)
+            // .max_tokens(1000u32)
             .build()?;
 
         // 调用 API
@@ -267,5 +267,12 @@ impl LlmService {
         }
 
         Ok(None)
+    }
+}
+
+
+impl Default for LlmService {
+    fn default() -> Self {
+        LlmService::new(get())
     }
 }

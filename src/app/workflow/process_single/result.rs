@@ -1,4 +1,4 @@
-use crate::app::models::Question;
+use serde_json::Value;
 
 #[derive(Debug, Clone, Copy)]
 pub enum SearchSource {
@@ -19,13 +19,10 @@ impl SearchSource {
 #[derive(Debug)]
 pub enum BuildResult {
     Found {
-        source: SearchSource,
-        matched_index: usize,
-        matched_data: serde_json::Value,
-        screenshot_url: String,
+        matched_data: Value,
     },
     Generated {
-        question: Question,
+        question: Value,
         screenshot_url: String,
     },
     ManualRequired {
@@ -40,7 +37,6 @@ pub enum BuildResult {
 pub enum StepError {
     NotFound,
     LlmRejected,
-    RetryExhausted,
     UnsupportedQuestion,
     LlmBuildFailed(String),
     InfraError(anyhow::Error),
@@ -52,8 +48,3 @@ impl From<anyhow::Error> for StepError {
     }
 }
 
-impl StepError {
-    pub fn is_retryable(&self) -> bool {
-        matches!(self, StepError::NotFound | StepError::LlmRejected)
-    }
-}
