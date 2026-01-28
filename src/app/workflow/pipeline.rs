@@ -8,6 +8,7 @@ use tokio::time::sleep;
 use tracing::{error, info}; 
 
 use crate::api::submit::submit_generated_question;
+use crate::app::data_subject::smart_find_subject_code;
 use crate::app::models::Paper;
 use crate::app::workflow::QuestionCtx;
 use crate::app::workflow::process_single::{
@@ -39,7 +40,7 @@ pub async fn run() -> Result<(), anyhow::Error> {
                 error!("试卷 {:?} 处理失败，跳过。错误: {:?}", path, e);
             }
         })
-        .buffer_unordered(3) // 同时处理 3 套试卷
+        .buffer_unordered(10) // 同时处理 10 套试卷
         .collect::<Vec<_>>()
         .await;
 
@@ -55,10 +56,9 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let config = AppConfig::load()?;
     let llm_service = Arc::new(create_llm_service(&config));
     let page_id = paper.page_id.clone().ok_or_else(|| anyhow::anyhow!("试卷缺少 page_id"))?;
-    let subject_code = "54".to_string(); // 暂时写死数学
+    let subject_code: String = smart_find_subject_code(&paper.subject).ok_or_else(|| anyhow::anyhow!("无法识别科目代码"))?.to_string();
     let path_display = path.display().to_string();
 
-    // 预处理题目上下文，确保序号正确
     let mut tasks = Vec::new();
     let mut pure_question_index = 0;
 
@@ -98,17 +98,15 @@ async fn process_single_paper(path: &Path) -> Result<()> {
             let path_display = path_display.clone();
 
             async move {
-                if ctx.is_title {
-                    Ok((index, question, ctx, SubmitAction::Title))
+                if ctx.is_title { Ok((index, question, ctx, SubmitAction::Title))
                 } else {
                     let result = process_single_question(&question, &ctx, &llm_service, &question.stem).await;
-
                     match result {
                         Ok(BuildResult::Found { matched_data, .. }) => {
                             Ok((index, question, ctx, SubmitAction::Matched(matched_data)))
                         }
                         Ok(BuildResult::Generated { question: generated_data, .. }) => {
-                            info!("{} LLM 构建完成", ctx.log_prefix());
+                            info!(target: "failed_questions", "{} 由 LLM 生成，试卷: {} | page_id: {} | 题号: {}", ctx.log_prefix(), path_display, ctx.paper_id, ctx.not_include_title_index);
                             Ok((index, question, ctx, SubmitAction::Generated(generated_data)))
                         }
                         Ok(BuildResult::ManualRequired { reason, .. }) => {
@@ -136,9 +134,12 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let mut valid_submissions: Vec<_> = results
         .into_iter()
         .filter_map(|res| match res {
+            Ok((_, _, _, SubmitAction::None)) => {
+                failure_count += 1;
+                None
+            }
             Ok(item) => Some(item),
             Err(_e) => {
-                // 如果需要，可以在这里打印流处理阶段的错误日志
                 failure_count += 1;
                 None
             }
@@ -178,7 +179,7 @@ async fn process_single_paper(path: &Path) -> Result<()> {
                 }
             },
             Err(e) => {
-                failure_count += 1; // 累加提交阶段的失败
+                failure_count += 1; 
                 let err_msg = format!("提交失败: {:?}", e);
                 error!("{} {}", ctx.log_prefix(), err_msg);
                 
