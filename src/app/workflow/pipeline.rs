@@ -1,13 +1,15 @@
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use futures::StreamExt;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde_json::Value;
 use tokio::time::sleep;
 use tracing::{error, info}; 
 
-use crate::api::submit::submit_generated_question;
+use crate::api::submit::{submit_generated_question};
+use crate::api::submit_paper::submit_paper;
 use crate::app::data_subject::smart_find_subject_code;
 use crate::app::models::Paper;
 use crate::app::workflow::QuestionCtx;
@@ -32,15 +34,28 @@ pub async fn run() -> Result<(), anyhow::Error> {
 
     info!("扫描到 {} 个待处理试卷文件", paths.len());
 
-    futures::stream::iter(paths)
-        .map(|path| async move {
-            info!("开始处理试卷: {:?}", path);
+    let total = paths.len();
+    let processed_cnt = Arc::new(AtomicUsize::new(0));
 
-            if let Err(e) = process_single_paper(&path).await {
-                error!("试卷 {:?} 处理失败，跳过。错误: {:?}", path, e);
+    futures::stream::iter(paths)
+        .map(|path| {
+            let processed_cnt = processed_cnt.clone();
+            async move {
+                info!("开始处理试卷: {:?}", path);
+
+                if let Err(e) = process_single_paper(&path).await {
+                    error!("试卷 {:?} 处理失败，跳过。错误: {:?}", path, e);
+                }
+
+                let current = processed_cnt.fetch_add(1, Ordering::SeqCst) + 1;
+                let remaining = total.saturating_sub(current);
+                let _ = std::fs::write(
+                    "process.txt",
+                    format!("已完成: {}\n待处理: {}\n总数: {}\n", current, remaining, total),
+                );
             }
         })
-        .buffer_unordered(10) // 同时处理 10 套试卷
+        .buffer_unordered(80) // 同时处理 80 套试卷
         .collect::<Vec<_>>()
         .await;
 
@@ -193,6 +208,11 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     }
 
     info!("当前试卷全部完成: 成功提交 {}, 总失败 {}", success_count, failure_count);
+
+    submit_paper(&page_id).await?;
+
+    std::fs::remove_file(path).with_context(|| format!("删除文件失败: {:?}", path))?;
+    info!("已删除试卷文件: {:?}", path);
 
     Ok(())
 }

@@ -4,7 +4,6 @@ mod api;
 mod app;
 mod config;
 
-use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

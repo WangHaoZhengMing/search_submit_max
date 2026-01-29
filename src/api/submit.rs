@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde_json::json;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::api::send_request::send_api_request;
 use crate::app::models::Question;
@@ -78,7 +78,7 @@ pub async fn submit_matched_question(
         .await
         .with_context(|| format!("{} 提交匹配题目失败", prefix))?;
 
-    info!("{} 匹配题目提交成功: {:?}", prefix, response);
+    debug!("{} 匹配题目提交成功: {:?}", prefix, response);
 
     Ok(())
 }
