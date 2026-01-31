@@ -1,6 +1,3 @@
-//! 单题处理流程
-//!
-//! 完整流程：上传 → 搜索 → LLM 匹配 → 兜底
 mod build_ques_llm;
 pub(crate) mod result;
 mod search;
@@ -12,7 +9,7 @@ use crate::app::workflow::QuestionCtx;
 use crate::app::workflow::process_single::build_ques_llm::build_question_via_llm;
 use crate::app::workflow::process_single::result::BuildResult;
 use crate::app::workflow::process_single::search::{MatchOutput, k12_fallback, search_k12};
-use crate::app::workflow::process_single::upload::upload_screenshot_tohaoran;
+use crate::app::workflow::process_single::upload::{upload_screenshot,};
 use crate::config::AppConfig;
 use anyhow::{Context, Result};
 use tracing::{info, warn};
@@ -24,10 +21,8 @@ pub async fn process_single_question(
     ocr_text: &str,
 ) -> Result<BuildResult> {
     let prefix = ctx.log_prefix();
-    info!("{} ========== 开始处理题目 ==========", prefix);
-
     info!("{} [步骤 1/3] 上传截图", prefix);
-    let screenshot_url = upload_screenshot_tohaoran(&ctx)
+    let screenshot_url = upload_screenshot(&ctx)
         .await
         .with_context(|| format!("{} 上传截图失败", prefix))?;
 
@@ -38,15 +33,15 @@ pub async fn process_single_question(
         }
     }
 
-    info!("{} [步骤 2/3] K12 未命中，进入 fallback", prefix);
+    info!("{} [步骤 2/3] K12 未命中，学科网", prefix);
     match k12_fallback(ctx, llm_service, ocr_text, &screenshot_url).await {
         Ok(found) => return Ok(to_build_result(found)),
         Err(e) => {
-            tracing::warn!("{} K12 fallback 搜索与匹配未命中: {:?}", prefix, e);
+            tracing::warn!("{} 学科搜索与匹配未命中: {:?}", prefix, e);
         }
     }
 
-    info!("{} [步骤 3/3] 搜索链路未命中，尝试 LLM 构建", prefix);
+    info!("{} [步骤 3/3] 搜索链路均未命中，尝试 LLM 构建", prefix);
     match build_question_via_llm(ctx, ocr_text, &screenshot_url).await {
         Ok(question_value) => {
             info!("{} LLM 构建成功", prefix);
@@ -57,12 +52,9 @@ pub async fn process_single_question(
         }
         Err(e) => {
             warn!(
-                target: "failed_questions",
-                "{} 人工处理 | paper_id={} | idx={} | reason={:?} | screenshot(base64)= {}",
                 prefix,
                 ctx.paper_id,
                 ctx.not_include_title_index,
-                e,
                 ctx.screenshot
             );
             Ok(BuildResult::ManualRequired {

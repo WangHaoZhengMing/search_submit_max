@@ -15,7 +15,15 @@ pub struct QuestionCtx {
     pub is_title: bool,
     pub screenshot: String,
 
-    pub not_include_title_index: usize,// 上面的question_index 是包含标题题目的索引，这个是不包含标题题目的索引
+    pub not_include_title_index: usize, // 上面的question_index 是包含标题题目的索引，这个是不包含标题题目的索引
+}
+#[derive(Debug, Clone,serde::Serialize,serde::Deserialize)]
+pub struct PaperQuestionsStatus {
+    paper_id: String,
+    paper_name: String,
+    matched: Vec<i32>,
+    generated: Vec<i32>,
+    manual: Vec<i32>,
 }
 
 impl QuestionCtx {
