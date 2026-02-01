@@ -118,7 +118,7 @@ async fn process_single_paper(path: &Path) -> Result<()> {
                     let mut result = process_single_question(&question, &ctx, &llm_service, &question.stem).await;
 
                     let mut retry_count = 0;
-                    while retry_count < 10 {
+                    while retry_count < 20 {// 最多重试 20 次
                         if let Ok(BuildResult::Found { .. }) = result {
                             break;
                         }

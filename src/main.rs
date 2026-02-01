@@ -4,7 +4,6 @@ mod api;
 mod app;
 mod config;
 
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let _guard = app::logger::init("logs", "search_submit");
