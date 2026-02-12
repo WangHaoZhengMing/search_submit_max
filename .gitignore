@@ -1,3 +1,6 @@
 /target
 /output_toml
 /process.txt
+/submit.txt
+/logs/*
+!/logs/output.json
