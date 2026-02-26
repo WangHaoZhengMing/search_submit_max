@@ -8,6 +8,8 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 use tokio::time::sleep;
 use tracing::{error, info}; 
+use tokio_retry::strategy::FixedInterval;
+use tokio_retry::Retry;
 
 use crate::api::submit::{submit_generated_question};
 use crate::api::submit_paper::submit_paper;
@@ -73,22 +75,28 @@ async fn process_single_paper(path: &Path) -> Result<()> {
     let subject_code: String = smart_find_subject_code(&paper.subject).ok_or_else(|| anyhow::anyhow!("无法识别科目代码"))?.to_string();
     let path_display = path.display().to_string();
 
-    let mut tasks = Vec::new();
-    let mut pure_question_index = 0;
+    let tasks: Vec<_> = paper.stemlist.into_iter().enumerate()
+        .scan(0, |pure_question_index, (i, question)| {
+            let not_include_title_index = if question.is_title {
+                *pure_question_index
+            } else {
+                *pure_question_index += 1;
+                *pure_question_index
+            };
 
-    for (i, question) in paper.stemlist.into_iter().enumerate() {
-        let ctx = QuestionCtx {
-            paper_id: page_id.clone(),
-            subject_code: subject_code.clone(),
-            stage: "3".to_string(),
-            paper_index: 1,
-            question_index: i + 1,
-            is_title: question.is_title,
-            screenshot: question.screenshot.clone(),
-            not_include_title_index: if question.is_title { pure_question_index } else { pure_question_index += 1; pure_question_index },
-        };
-        tasks.push((question, ctx));
-    }
+            let ctx = QuestionCtx {
+                paper_id: page_id.clone(),
+                subject_code: subject_code.clone(),
+                stage: "3".to_string(),
+                paper_index: 1,
+                question_index: i + 1,
+                is_title: question.is_title,
+                screenshot: question.screenshot.clone(),
+                not_include_title_index,
+            };
+            Some((question, ctx))
+        })
+        .collect();
 
     enum SubmitAction {
         Title,
@@ -115,16 +123,22 @@ async fn process_single_paper(path: &Path) -> Result<()> {
             async move {
                 if ctx.is_title { Ok((index, question, ctx, SubmitAction::Title))
                 } else {
-                    let mut result = process_single_question(&question, &ctx, &llm_service, &question.stem).await;
-
-                    let mut retry_count = 0;
-                    while retry_count < 20 {// 最多重试 20 次
-                        if let Ok(BuildResult::Found { .. }) = result {
-                            break;
+                    let strategy = FixedInterval::from_millis(500).take(20);
+                    let result = Retry::spawn(strategy, || async {
+                        let res = process_single_question(&question, &ctx, &llm_service, &question.stem).await;
+                        match res {
+                            Ok(BuildResult::Found { .. }) => Ok(res),
+                            _ => Err(res),
                         }
-                        retry_count += 1;
-                        result = process_single_question(&question, &ctx, &llm_service, &question.stem).await;
-                    }
+                    }).await;
+
+                    // Retry::spawn 返回的是 Result<T, E>，其中 E 是闭包返回的 Err。
+                    // 如果重试耗尽，它返回最后一次的 Err。
+                    // 这里我们需要解包出的 result 实际是 Result<BuildResult, anyhow::Error>
+                    let result = match result {
+                        Ok(res) => res,   // Found case
+                        Err(res) => res,  // Exhausted retries, returns the last result (which might be Generated, ManualRequired, or Err)
+                    };
 
                     match result {
                         Ok(BuildResult::Found { matched_data, .. }) => {

@@ -1,5 +1,5 @@
 use std::result::Result;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
