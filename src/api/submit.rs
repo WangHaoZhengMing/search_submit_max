@@ -39,7 +39,7 @@ pub async fn submit_title_question(question: &Question, ctx: &QuestionCtx) -> Re
         .await
         .with_context(|| format!("{} 提交标题题目失败", prefix))?;
 
-    info!("{} 标题题目提交成功: {:?}", prefix, response);
+    debug!("{} 标题 or 题目提交成功: {:?}", prefix, response);
 
     Ok(())
 }
@@ -94,7 +94,7 @@ pub async fn submit_generated_question(
     let response = send_api_request(url, &body_data)
         .await
         .with_context(|| format!("{} 提交匹配题目失败", prefix))?;
-    info!("{} LLM生成题目提交成功: {:?}", prefix, response);
+    debug!("{} LLM生成题目提交成功: {:?}", prefix, response);
 
     Ok(())
 }
