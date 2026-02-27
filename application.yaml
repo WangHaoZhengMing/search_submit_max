@@ -7,7 +7,7 @@ tikutoken: 732FD8402F95087CD934374135C46EE5
 toml_folder: output_toml
 
 
-llm_api_key: d7c03f9f49a14fb981e1594821cccb1f
+llm_api_key: 08c4c841057c42da9cbeda32184035ff
 llm_api_base_url: http://menshen.xdf.cn/v1
 llm_model_name: doubao-seed-1.6-flash
 
