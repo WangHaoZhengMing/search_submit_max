@@ -6,17 +6,11 @@ pub enum SearchSource {
     Xueke,
 }
 
-impl SearchSource {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            SearchSource::K12 => "k12",
-            SearchSource::Xueke => "xueke",
-        }
-    }
-}
+
 
 /// 统一的出口协议，覆盖“找到”“生成”“需人工”三类结果。
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum BuildResult {
     Found {
         matched_data: Value,

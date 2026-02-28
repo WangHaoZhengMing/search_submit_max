@@ -50,7 +50,7 @@ pub async fn upload_screenshot(ctx: &QuestionCtx) -> Result<String> {
     Ok(cdn_url)
 }
 
-
+#[allow(dead_code)]
 pub async fn upload_screenshot_tohaoran(ctx: &QuestionCtx) -> Result<String> {
     let prefix = ctx.log_prefix();
     

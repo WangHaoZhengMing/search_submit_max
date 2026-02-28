@@ -4,7 +4,7 @@ use reqwest::header::{
     ACCEPT, CONTENT_TYPE, COOKIE, HOST, HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT,
 };
 use serde_json::Value;
-use tracing::{debug, info};
+use tracing::debug;
 
 use crate::config::CONFIG;
 

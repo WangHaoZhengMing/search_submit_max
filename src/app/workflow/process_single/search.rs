@@ -8,6 +8,7 @@ use crate::app::workflow::QuestionCtx;
 use crate::app::workflow::process_single::result::{SearchSource, StepError};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct MatchOutput {
     pub source: SearchSource,
     pub matched_index: usize,

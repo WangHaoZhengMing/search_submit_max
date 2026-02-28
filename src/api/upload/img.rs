@@ -157,6 +157,7 @@ async fn upload_image_to_cos_with_credential(
 /// * `local_file_path` - 本地图片文件的路径
 /// * `secret_id` - 腾讯云 SecretId (建议从环境变量读取)
 /// * `secret_key` - 腾讯云 SecretKey (建议从环境变量读取)
+#[allow(dead_code)]
 pub async fn upload_image_haoranwang(
     local_file_path: &str,
 ) -> Result<String> {

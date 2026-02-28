@@ -1,5 +1,5 @@
 use std::result::Result;
-use rand::{Rng, RngExt};
+use rand::RngExt;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -28,9 +28,8 @@ impl SingleQuestion {
         }
         let mut options: Vec<Option> = vec![];
 
-        let mut title = String::new();
         for (i, opt_text) in self.options.iter().enumerate() {
-            title = match i {
+            let title = match i {
                 0 => "A",
                 1 => "B",
                 2 => "C",
@@ -292,36 +291,22 @@ pub async fn build_question_via_llm(
         .trim_end_matches("```")
         .trim(); // 再次 trim 去除首尾可能留下的换行符
 
+    let parse_err = |e| {
+        StepError::LlmBuildFailed(format!(
+            "can not parse toml: {}\nRaw: {}",
+            e, clean_response
+        ))
+    };
+
     if clean_response.contains("CSX-DANXUAN") {
-        let temp_ques = toml::from_str::<SingleQuestion>(clean_response).map_err(|e| {
-            StepError::LlmBuildFailed(format!(
-                "can not parser toml: {}\nRaw: {}",
-                e, clean_response
-            ))
-        })?;
-
-        let payload = temp_ques.to_payload(&ctx);
-        Ok(payload)
+        let temp_ques: SingleQuestion = toml::from_str(clean_response).map_err(parse_err)?;
+        Ok(temp_ques.to_payload(ctx))
     } else if clean_response.contains("CSX-ZHUGUAN") {
-        let temp_ques = toml::from_str::<ZhuguanQuestion>(clean_response).map_err(|e| {
-            StepError::LlmBuildFailed(format!(
-                "can not parser toml: {}\nRaw: {}",
-                e, clean_response
-            ))
-        })?;
-
-        let payload = temp_ques.to_payload(&ctx);
-        Ok(payload)
+        let temp_ques: ZhuguanQuestion = toml::from_str(clean_response).map_err(parse_err)?;
+        Ok(temp_ques.to_payload(ctx))
     } else if clean_response.contains("CSX-TIANKONG") {
-        let temp_ques = toml::from_str::<TiankongQuestion>(clean_response).map_err(|e| {
-            StepError::LlmBuildFailed(format!(
-                "can not parser toml: {}\nRaw: {}",
-                e, clean_response
-            ))
-        })?;
-
-        let payload = temp_ques.to_payload(&ctx);
-        Ok(payload)
+        let temp_ques: TiankongQuestion = toml::from_str(clean_response).map_err(parse_err)?;
+        Ok(temp_ques.to_payload(ctx))
     } else {
         Err(StepError::UnsupportedQuestion)
     }
