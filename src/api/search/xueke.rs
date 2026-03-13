@@ -2,8 +2,8 @@ use anyhow::Result;
 use serde_json::json;
 use tracing::{debug, info};
 
-use crate::api::send_request::send_api_request;
 use super::SearchResult;
+use crate::api::send_request::send_api_request;
 
 /// 学科网图文搜索
 ///
@@ -35,12 +35,12 @@ pub async fn xueke_search(
 
     for attempt in 1..=max_retries {
         info!(
-            "发送学科网图文搜索请求 (尝试 {}/{}): stage={}, subject={}, text={}",
-            attempt, max_retries, stage, subject, text.unwrap_or("None")
+            "发送学科网图文搜索请求 (尝试 {}/{}): stage={}, subject={}",
+            attempt, max_retries, stage, subject
         );
 
         let result = send_api_request(url, &payload).await?;
-        debug!("result:{}",result.to_string());
+        debug!("result:{}", result.to_string());
 
         // 检查 data 字段是否存在且不为空
         if let Some(data) = result.get("data") {
@@ -59,10 +59,15 @@ pub async fn xueke_search(
             }
         }
 
-        info!("学科网图文搜索返回空结果或缺少 data 字段 (尝试 {}/{})",attempt, max_retries);
+        info!(
+            "学科网图文搜索返回空结果或缺少 data 字段 (尝试 {}/{})",
+            attempt, max_retries
+        );
         last_result = Some(result);
 
-        if attempt < max_retries { tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;}
+        if attempt < max_retries {
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        }
     }
 
     Err(anyhow::anyhow!(
@@ -81,16 +86,13 @@ mod tests {
     async fn test_xueke_search_with_img() {
         logger::init_test();
 
-        let result = xueke_search(
-            "3",
-            "61",
-            None,
-            Some("A、已号会人工服火"),
-        )
-        .await;
+        let result = xueke_search("3", "61", None, Some("A、已号会人工服火")).await;
 
         assert!(result.is_ok());
         let response = result.unwrap();
-        println!("搜索结果: {}", serde_json::to_string_pretty(&response).unwrap());
+        println!(
+            "搜索结果: {}",
+            serde_json::to_string_pretty(&response).unwrap()
+        );
     }
 }

@@ -12,7 +12,7 @@ use crate::app::workflow::process_single::search::{MatchOutput, k12_fallback, se
 use crate::app::workflow::process_single::upload::{upload_screenshot,};
 use crate::config::AppConfig;
 use anyhow::{Context, Result};
-use tracing::{info, warn};
+use tracing::{debug, info};
 
 pub async fn process_single_question(
     _question: &Question,
@@ -21,7 +21,7 @@ pub async fn process_single_question(
     ocr_text: &str,
 ) -> Result<BuildResult> {
     let prefix = ctx.log_prefix();
-    info!("{} [步骤 1/3] 上传截图", prefix);
+    debug!("{} [步骤 1/3] 上传截图", prefix);
     let screenshot_url = upload_screenshot(&ctx)
         .await
         .with_context(|| format!("{} 上传截图失败", prefix))?;

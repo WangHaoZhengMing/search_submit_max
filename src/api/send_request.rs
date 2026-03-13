@@ -32,7 +32,7 @@ pub async fn send_api_request(url: &str, playload: &Value) -> Result<Value> {
     );
 
     // 包含: XDFUUID, e2e, e2mf, token
-    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_cookie())?);
+    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_haoran_cookie())?);
 
     headers.insert("tikutoken", HeaderValue::from_str(&CONFIG.tikutoken)?);
 
@@ -54,33 +54,6 @@ pub async fn send_api_request(url: &str, playload: &Value) -> Result<Value> {
     Ok(result)
 }
 
-pub async fn send_api_get_request(url: &str) -> Result<Value> {
-    let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0"));
-    headers.insert(REFERER, HeaderValue::from_static("https://tk-lpzx.xdf.cn/"));
-    headers.insert(ORIGIN, HeaderValue::from_static("https://tk-lpzx.xdf.cn"));
-    headers.insert(HOST, HeaderValue::from_static("tps-tiku-api.staff.xdf.cn"));
-    headers.insert(
-        ACCEPT,
-        HeaderValue::from_static("application/json, text/plain, */*"),
-    );
-    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_cookie())?);
-    headers.insert("tikutoken", HeaderValue::from_str(&CONFIG.tikutoken)?);
-
-    let client = Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()?;
-
-    let resp = client
-        .get(url)
-        .headers(headers)
-        .send()
-        .await?;
-
-    let result: Value = resp.json().await?;
-    debug!("API 响应: {}", serde_json::to_string(&result).unwrap());
-    Ok(result)
-}
 
 pub async fn send_api_request_with_own_cookie(url: &str, playload: &Value) -> Result<Value> {
     // let url = "https://tps-tiku-api.staff.xdf.cn/paper/new/save";
@@ -106,7 +79,7 @@ pub async fn send_api_request_with_own_cookie(url: &str, playload: &Value) -> Re
     );
 
     // 包含: XDFUUID, e2e, e2mf, token
-    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_my_cookie())?);
+    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_haoran_cookie())?);
 
     headers.insert("tikutoken", HeaderValue::from_str(&CONFIG.tikutoken)?);
 

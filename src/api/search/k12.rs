@@ -1,7 +1,7 @@
 
 use anyhow::Result;
 use serde_json::json;
-use tracing::{debug, info};
+use tracing::info;
 
 use crate::api::send_request::send_api_request;
 use super::SearchResult;
@@ -23,15 +23,13 @@ pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<Se
         "subject": subject,
         "stage": stage,
     });
-    debug!("发送 K12 题库搜索请求: stage={}, subject={}, text={}", stage, subject, text);
-
     let max_retries = crate::config::get().search_max_retries;
     let mut last_result = None;
 
     for attempt in 1..=max_retries {
         info!(
-            "发送 K12 题库搜索请求 (尝试 {}/{}): stage={}, subject={}, text={}",
-            attempt, max_retries, stage, subject, text
+            "发送 K12 题库搜索请求 (尝试 {}/{}): stage={}, subject={} ",
+            attempt, max_retries, stage, subject
         );
 
         let result = send_api_request(url, &payload).await?;

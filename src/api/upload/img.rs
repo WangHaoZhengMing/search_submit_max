@@ -73,7 +73,7 @@ async fn upload_image_to_cos_with_credential(
     credential_json: &Value,
     local_file_path: &str,
 ) -> Result<String> {
-    info!("开始上传图片: {}", local_file_path);
+    debug!("开始上传图片: {}", local_file_path);
 
     // 1. 解析凭证信息
     let cred_info = parse_credential_info(credential_json)?;
@@ -131,7 +131,7 @@ async fn upload_image_to_cos_with_credential(
     let filename_with_ext = format!("{}.{}", filename, extension);
     let object_key = format!("{}/{}", cred_info.key_prefix, filename_with_ext);
 
-    info!("上传路径: {}", object_key);
+    debug!("上传路径: {}", object_key);
 
     // 7. 执行上传，添加 Pic-Operations 头
     let pic_ops = serde_json::json!({
@@ -158,7 +158,7 @@ async fn upload_image_to_cos_with_credential(
     if response.status_code() == 200 {
         // 8. 拼接最终的 URL
         let final_url = format!("https://{}/{}", cred_info.domain, object_key);
-        info!("图片上传成功！最终 URL: {}", final_url);
+        debug!("图片上传成功！最终 URL: {}", final_url);
         Ok(final_url)
     } else {
         Err(anyhow::anyhow!(
@@ -176,7 +176,7 @@ async fn upload_image_to_cos_with_credential(
 /// * `secret_key` - 腾讯云 SecretKey (建议从环境变量读取)
 #[allow(dead_code)]
 pub async fn upload_image_haoranwang(local_file_path: &str) -> Result<String> {
-    info!("开始上传图片流程: {}", local_file_path);
+    debug!("开始上传图片流程: {}", local_file_path);
 
     // --- 配置信息 ---
     let bucket_name = "tiku-1396614861";
@@ -243,7 +243,7 @@ pub async fn upload_image_haoranwang(local_file_path: &str) -> Result<String> {
     // --- 7. 处理结果 ---
     if response.status_code() == 200 {
         let final_url = format!("{}/{}", base_url, object_key);
-        info!("图片上传成功！URL: {}", final_url);
+        debug!("图片上传成功！URL: {}", final_url);
         Ok(final_url)
     } else {
         let err_msg = format!("上传失败，状态码: {}", response.status_code());
@@ -252,18 +252,15 @@ pub async fn upload_image_haoranwang(local_file_path: &str) -> Result<String> {
     }
 }
 
-#[allow(dead_code)]
 /// 上传图片的完整流程：获取凭证 -> 上传图片 -> 返回 URL
 pub async fn upload_img(local_file_path: &str) -> Result<String> {
-    info!("开始上传图片流程: {}", local_file_path);
-
     // 1. 获取上传凭证
     let credential = get_credential().await?;
 
     // 2. 上传图片到腾讯云 COS
     let image_url = upload_image_to_cos_with_credential(&credential, local_file_path).await?;
 
-    info!("图片上传完成，URL: {}", image_url);
+    debug!("图片上传完成，URL: {}", image_url);
     Ok(image_url)
 }
 

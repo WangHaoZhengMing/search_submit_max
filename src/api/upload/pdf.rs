@@ -5,7 +5,7 @@ use s3::region::Region;
 use serde_json::Value;
 use std::fs::File;
 use std::io::Read;
-use tracing::info;
+use tracing::{debug, info};
 
 use super::get_credential::get_credential;
 
@@ -125,7 +125,7 @@ async fn upload_pdf_to_cos_with_credential(
         extension
     );
 
-    info!("上传路径: {}", object_key);
+    debug!("上传路径: {}", object_key);
 
     // 7. 执行上传
     let response = bucket.put_object(&object_key, &contents).await?;

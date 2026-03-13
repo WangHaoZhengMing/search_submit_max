@@ -12,7 +12,7 @@ static CHECK_INDEX: AtomicUsize = AtomicUsize::new(0);
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppConfig {
-    pub cookie: String,
+    pub haoran_cookie: String,
     pub cookie_bai: Option<String>,
     pub cookie_zhang: Option<String>,
     pub cookie_xin: Option<String>,
@@ -63,7 +63,7 @@ impl AppConfig {
             .try_deserialize()
             .with_context(|| anyhow::anyhow!("Failed to deserialize config"))?;
 
-        config.valid_cookies.push(config.cookie.clone());
+        config.valid_cookies.push(config.haoran_cookie.clone());
         if let Some(c) = &config.cookie_bai {
             if !c.trim().is_empty() {
                 config.valid_cookies.push(c.clone());
@@ -95,14 +95,14 @@ pub fn get() -> &'static AppConfig {
 pub fn get_cookie() -> &'static str {
     let cookies = &CONFIG.valid_cookies;
     if cookies.is_empty() {
-        return &CONFIG.cookie;
+        return &CONFIG.haoran_cookie;
     }
     let index = CHECK_INDEX.fetch_add(1, Ordering::SeqCst);
     &cookies[index % cookies.len()]
 }
 
-pub fn get_my_cookie() -> &'static str {
-    &CONFIG.cookie
+pub fn get_haoran_cookie() -> &'static str {
+    &CONFIG.haoran_cookie
 }
 
 #[cfg(test)]

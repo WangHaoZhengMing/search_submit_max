@@ -16,7 +16,6 @@ use crate::app::workflow::QuestionCtx;
 /// - 提交成功或失败
 pub async fn submit_title_question(question: &Question, ctx: &QuestionCtx) -> Result<()> {
     let prefix = ctx.log_prefix();
-    info!("{} 提交标题题目", prefix);
 
     let body_data = json!({
         "paperId": ctx.paper_id,
@@ -38,8 +37,12 @@ pub async fn submit_title_question(question: &Question, ctx: &QuestionCtx) -> Re
     let response = send_api_request(url, &body_data)
         .await
         .with_context(|| format!("{} 提交标题题目失败", prefix))?;
+    if response.get("code").and_then(|c| c.as_i64()) != Some(403) {
+        let error_msg = response.get("message").and_then(|m| m.as_str()).unwrap_or("未知错误");
+        return Err(anyhow::anyhow!("{} 提交标题题目失败: {}", prefix, error_msg));
+    }
 
-    debug!("{} 标题 or 题目提交成功: {:?}", prefix, response);
+    info!("{} 标题提交成功", prefix);
 
     Ok(())
 }
@@ -77,8 +80,11 @@ pub async fn submit_matched_question(
     let response = send_api_request(url, &body_data)
         .await
         .with_context(|| format!("{} 提交匹配题目失败", prefix))?;
-
-    debug!("{} 匹配题目提交成功: {:?}", prefix, response);
+    if response.get("code").and_then(|c| c.as_i64()) != Some(403) {
+        let error_msg = response.get("message").and_then(|m| m.as_str()).unwrap_or("未知错误");
+        return Err(anyhow::anyhow!("{} 提交匹配题目失败: {}", prefix, error_msg));
+    }
+    info!("{} 匹配题目提交成功", prefix);
 
     Ok(())
 }
@@ -94,7 +100,11 @@ pub async fn submit_generated_question(
     let response = send_api_request(url, &body_data)
         .await
         .with_context(|| format!("{} 提交匹配题目失败", prefix))?;
-    debug!("{} LLM生成题目提交成功: {:?}", prefix, response);
+    if response.get("code").and_then(|c| c.as_i64()) != Some(403) {
+        let error_msg = response.get("message").and_then(|m| m.as_str()).unwrap_or("未知错误");
+        return Err(anyhow::anyhow!("{} 提交匹配题目失败: {}", prefix, error_msg));
+    }
+    info!("{} LLM生成题目提交成功", prefix);
 
     Ok(())
 }

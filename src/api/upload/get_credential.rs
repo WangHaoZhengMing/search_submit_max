@@ -1,10 +1,10 @@
 use anyhow::Result;
 use serde_json::Value;
-use tracing::{debug, info};
+use tracing::{debug};
 
 /// 获取腾讯云 COS 上传凭证（图片和 PDF 通用）
 pub async fn get_credential() -> Result<Value> {
-    info!("获取上传凭证...");
+    debug!("获取上传凭证...");
     let result = crate::api::send_request::send_api_request_with_own_cookie(
         "https://tps-tiku-api.staff.xdf.cn/api/attachment/v1/credential",
         &serde_json::json!({}),
