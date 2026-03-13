@@ -3,7 +3,7 @@ use serde_json::json;
 use tracing::{debug, info};
 
 use super::SearchResult;
-use crate::api::send_request::send_api_request;
+use crate::api::send_request::send_api_request_randomly;
 
 /// 学科网图文搜索
 ///
@@ -39,7 +39,7 @@ pub async fn xueke_search(
             attempt, max_retries, stage, subject
         );
 
-        let result = send_api_request(url, &payload).await?;
+        let result = send_api_request_randomly(url, &payload).await?;
         debug!("result:{}", result.to_string());
 
         // 检查 data 字段是否存在且不为空

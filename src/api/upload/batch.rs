@@ -5,7 +5,7 @@ use tracing::info;
 use tokio::io::AsyncWriteExt;
 
 use super::pdf::upload_pdf;
-use crate::api::send_request::send_api_request;
+use crate::api::send_request::{ send_api_request_with_own_cookie};
 
 /// 上传附件信息
 #[derive(Debug, Serialize)]
@@ -65,7 +65,7 @@ pub struct BatchUploadResponse {
 }
 
 /// 调用批量上传接口，将 PDF URL 提交到服务器进行转换
-#[allow(dead_code)]
+// #[allow(dead_code)]
 async fn batch_upload_files(pdf_url: &str, file_name: &str) -> Result<Value> {
     let attachment = UploadAttachment {
         file_name: file_name.to_string(),
@@ -82,7 +82,7 @@ async fn batch_upload_files(pdf_url: &str, file_name: &str) -> Result<Value> {
 
     info!("提交批量上传请求，PDF URL: {}", pdf_url);
 
-    send_api_request(
+    send_api_request_with_own_cookie(
         "https://tps-tiku-api.staff.xdf.cn/attachment/batch/upload/files",
         &payload,
     )

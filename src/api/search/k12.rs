@@ -3,7 +3,7 @@ use anyhow::Result;
 use serde_json::json;
 use tracing::info;
 
-use crate::api::send_request::send_api_request;
+use crate::api::send_request::send_api_request_randomly;
 use super::SearchResult;
 
 /// K12 题库搜索
@@ -32,7 +32,7 @@ pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<Se
             attempt, max_retries, stage, subject
         );
 
-        let result = send_api_request(url, &payload).await?;
+        let result = send_api_request_randomly(url, &payload).await?;
 
         // 检查 data 字段是否存在且不为空
         if let Some(data) = result.get("data") {

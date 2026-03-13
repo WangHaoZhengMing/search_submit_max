@@ -1,0 +1,207 @@
+
+warning: `search_submit_max` (bin "search_submit_max") generated 7 warnings (run `cargo fix --bin "search_submit_max" -p search_submit_max` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.78s
+     Running `target\debug\search_submit_max.exe`
+2026-03-13T12:02:48.833554Z  INFO search_submit_max::app::workflow::pipeline: 扫描到 1 个待处理试卷文件
+2026-03-13T12:02:48.833843Z  INFO search_submit_max::app::workflow::pipeline: 开始处理试卷: "output_toml\\重庆市双桥教育集团2025-2026学年七年级上学期第二次阶段检测生物试题.toml"
+2026-03-13T12:02:50.376832Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#2] [search] 触发 K12
+2026-03-13T12:02:50.377420Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:50.525619Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#3] [search] 触发 K12
+2026-03-13T12:02:50.526171Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:50.818387Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 2 条结果
+2026-03-13T12:02:50.901920Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:50.993355Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#4] [search] 触发 K12
+2026-03-13T12:02:50.993751Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:51.457126Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 9 条结果
+2026-03-13T12:02:51.524308Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#5] [search] 触发 K12
+2026-03-13T12:02:51.524703Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:51.982339Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 3 条结果
+2026-03-13T12:02:52.073842Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#6] [search] 触发 K12
+2026-03-13T12:02:52.074452Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:52.495912Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#7] [search] 触发 K12
+2026-03-13T12:02:52.496180Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:52.506856Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:52.887947Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 1/3)
+2026-03-13T12:02:52.911613Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#8] [search] 触发 K12
+2026-03-13T12:02:52.911770Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:53.379155Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 5 条结果
+2026-03-13T12:02:53.403211Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 2/3): stage=3, subject=58
+2026-03-13T12:02:53.409724Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#9] [search] 触发 K12
+2026-03-13T12:02:53.410201Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:53.849149Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 2/3)
+2026-03-13T12:02:53.875676Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 2 条结果
+2026-03-13T12:02:54.088069Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#10] [search] 触发 K12
+2026-03-13T12:02:54.089698Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:54.366037Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 3/3): stage=3, subject=58
+2026-03-13T12:02:54.448528Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:54.484025Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#11] [search] 触发 K12
+2026-03-13T12:02:54.484448Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:54.819065Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 3/3)
+2026-03-13T12:02:54.819440Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#7] K12 搜索与匹配失败: InfraError([试卷#1 题目#7] K12 搜索失败
+
+Caused by:
+    K12 题库搜索失败: 重试 3 次后仍未获取到有效数据。最后响应: {"code":200,"data":[],"message":"成功","success":true,"traceId":"kbPCyo0gOXqiDCuZ"})
+2026-03-13T12:02:54.819778Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#7] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:02:54.819915Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#7] [search] 触发 Xueke
+2026-03-13T12:02:54.820042Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:54.926091Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:55.090627Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#12] [search] 触发 K12
+2026-03-13T12:02:55.091101Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:55.452717Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 1/3)
+2026-03-13T12:02:55.636082Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#13] [search] 触发 K12
+2026-03-13T12:02:55.636290Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:55.755275Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:02:55.963431Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 2/3): stage=3, subject=58
+2026-03-13T12:02:56.000664Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 1/3)
+2026-03-13T12:02:56.090092Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#14] [search] 触发 K12
+2026-03-13T12:02:56.090558Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:56.308116Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 2/3)
+2026-03-13T12:02:56.506433Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 2/3): stage=3, subject=58
+2026-03-13T12:02:56.519091Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#15] [search] 触发 K12
+2026-03-13T12:02:56.519342Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:56.539427Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 3 条结果
+2026-03-13T12:02:56.816073Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 3/3): stage=3, subject=58
+2026-03-13T12:02:56.859160Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 2/3)
+2026-03-13T12:02:56.884232Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 1/3)
+2026-03-13T12:02:57.039831Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#16] [search] 触发 K12
+2026-03-13T12:02:57.040253Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:57.223077Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 3/3)
+2026-03-13T12:02:57.223618Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#12] K12 搜索与匹配失败: InfraError([试卷#1 题目#12] K12 搜索失败
+
+Caused by:
+    K12 题库搜索失败: 重试 3 次后仍未获取到有效数据。最后响应: {"code":200,"data":[],"message":"成功","success":true,"traceId":"gILZmezClz7nATNg"})
+2026-03-13T12:02:57.224039Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#12] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:02:57.224426Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#12] [search] 触发 Xueke
+2026-03-13T12:02:57.224685Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:57.374390Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 3/3): stage=3, subject=58
+2026-03-13T12:02:57.389297Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 2/3): stage=3, subject=58
+2026-03-13T12:02:57.501717Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:57.528454Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#6] K12 LLM 匹配成功，索引 0
+2026-03-13T12:02:57.749937Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#2] K12 LLM 匹配成功，索引 0
+2026-03-13T12:02:57.750842Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 3/3)
+2026-03-13T12:02:57.751836Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#13] K12 搜索与匹配失败: InfraError([试卷#1 题目#13] K12 搜索失败
+
+Caused by:
+    K12 题库搜索失败: 重试 3 次后仍未获取到有效数据。最后响应: {"code":200,"data":[],"message":"成功","success":true,"traceId":"lj5M30ndBG7qz8zt"})
+2026-03-13T12:02:57.752025Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#13] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:02:57.752088Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#13] [search] 触发 Xueke
+2026-03-13T12:02:57.752149Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:57.793034Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 2/3)
+2026-03-13T12:02:57.801259Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#17] [search] 触发 K12
+2026-03-13T12:02:57.801638Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:57.941668Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#3] K12 LLM 匹配成功，索引 0
+2026-03-13T12:02:58.055588Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:02:58.167857Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#18] [search] 触发 K12
+2026-03-13T12:02:58.168273Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:58.273222Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:58.299869Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 3/3): stage=3, subject=58
+2026-03-13T12:02:58.555154Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#19] [search] 触发 K12
+2026-03-13T12:02:58.555449Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:58.590917Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:02:58.734042Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 3/3)
+2026-03-13T12:02:58.734483Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#15] K12 搜索与匹配失败: InfraError([试卷#1 题目#15] K12 搜索失败
+
+Caused by:
+    K12 题库搜索失败: 重试 3 次后仍未获取到有效数据。最后响应: {"code":200,"data":[],"message":"成功","success":true,"traceId":"mU3LvubRg77bzTfj"})
+2026-03-13T12:02:58.734933Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#15] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:02:58.735661Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#15] [search] 触发 Xueke
+2026-03-13T12:02:58.736121Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:58.819896Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 5 条结果
+2026-03-13T12:02:58.889000Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#4] K12 LLM 匹配成功，索引 0
+2026-03-13T12:02:58.926844Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:02:59.040518Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#20] [search] 触发 K12
+2026-03-13T12:02:59.041353Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:02:59.471103Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 6 条结果
+2026-03-13T12:02:59.515732Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:03:00.188754Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#22] [search] 触发 K12
+2026-03-13T12:03:00.189426Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:00.675138Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 1 条结果
+2026-03-13T12:03:00.854810Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#23] [search] 触发 K12
+2026-03-13T12:03:00.855049Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:01.135781Z  WARN search_submit_max::app::workflow::process_single::search: [试卷#1 题目#9] K12 LLM 判断无匹配
+2026-03-13T12:03:01.136418Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#9] K12 搜索与匹配失败: LlmRejected
+2026-03-13T12:03:01.136719Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#9] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:03:01.136995Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#9] [search] 触发 Xueke
+2026-03-13T12:03:01.137240Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:01.212075Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#24] [search] 触发 K12
+2026-03-13T12:03:01.212774Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:01.516671Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#10] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:01.605235Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 10 条结果
+2026-03-13T12:03:01.644754Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 1/3)
+2026-03-13T12:03:01.836074Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#11] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:02.149254Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 2/3): stage=3, subject=58
+2026-03-13T12:03:02.164425Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#26] [search] 触发 K12
+2026-03-13T12:03:02.164784Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:02.226850Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:03:02.402861Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#7] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:02.626592Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 2/3)
+2026-03-13T12:03:02.786655Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 2 条结果
+2026-03-13T12:03:03.143112Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 3/3): stage=3, subject=58
+2026-03-13T12:03:03.154558Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#5] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:03.214370Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#28] [search] 触发 K12
+2026-03-13T12:03:03.214634Z  INFO search_submit_max::api::search::k12: 发送 K12 题库搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:03.601523Z  INFO search_submit_max::api::search::k12: K12 题库搜索返回空结果或缺少 data 字段 (尝试 3/3)
+2026-03-13T12:03:03.601921Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#24] K12 搜索与匹配失败: InfraError([试卷#1 题目#24] K12 搜索失败
+
+Caused by:
+    K12 题库搜索失败: 重试 3 次后仍未获取到有效数据。最后响应: {"code":200,"data":[],"message":"成功","success":true,"traceId":"lfRZ841If0iMOef3"})
+2026-03-13T12:03:03.602112Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#24] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:03:03.602211Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#24] [search] 触发 Xueke
+2026-03-13T12:03:03.602316Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:03.919141Z  INFO search_submit_max::api::search::k12: K12 题库搜索完成，找到 10 条结果
+2026-03-13T12:03:04.672990Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:03:04.745841Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#17] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:05.662081Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#14] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:05.713160Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#13] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:05.743532Z  WARN search_submit_max::app::workflow::process_single::search: [试卷#1 题目#22] K12 LLM 判断无匹配
+2026-03-13T12:03:05.744605Z  WARN search_submit_max::app::workflow::process_single: [试卷#1 题目#22] K12 搜索与匹配失败: LlmRejected
+2026-03-13T12:03:05.744931Z  INFO search_submit_max::app::workflow::process_single: [试卷#1 题目#22] [步骤 2/3] K12 未命中，学科网
+2026-03-13T12:03:05.745227Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#22] [search] 触发 Xueke
+2026-03-13T12:03:05.745434Z  INFO search_submit_max::api::search::xueke: 发送学科网图文搜索请求 (尝试 1/3): stage=3, subject=58
+2026-03-13T12:03:05.764848Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#18] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:06.056099Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#12] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:06.342780Z  INFO search_submit_max::api::search::xueke: 学科网图文搜索完成，找到 5 条结果
+2026-03-13T12:03:06.578540Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#20] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:06.610456Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#16] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:06.714893Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#15] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:08.324891Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#19] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:08.682041Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#9] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:08.737795Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#23] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:10.745870Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#26] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:11.064077Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#24] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:13.164618Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#28] K12 LLM 匹配成功，索引 0
+2026-03-13T12:03:14.246827Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#22] Xueke LLM 匹配成功，索引 0
+2026-03-13T12:03:25.033987Z  INFO search_submit_max::app::workflow::process_single::search: [试卷#1 题目#8] K12 LLM 匹配成功，索引 2
+2026-03-13T12:03:25.035427Z  INFO search_submit_max::app::workflow::pipeline: 试卷 "output_toml\\重庆市双桥教育集团2025-2026学年七年级上学期第二次阶段检测生物试题.toml" 预处理完成，准备顺序提交 28 个任务
+2026-03-13T12:03:25.379392Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 标题#1] 提交失败: [试卷#1 标题#1] 提交标题题目失败:
+2026-03-13T12:03:25.679553Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#2] 提交失败: [试卷#1 题目#2] 提交匹配题目失败:
+2026-03-13T12:03:25.993387Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#3] 提交失败: [试卷#1 题目#3] 提交匹配题目失败:
+2026-03-13T12:03:26.268707Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#4] 提交失败: [试卷#1 题目#4] 提交匹配题目失败:
+2026-03-13T12:03:26.553901Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#5] 提交失败: [试卷#1 题目#5] 提交匹配题目失败:
+2026-03-13T12:03:26.858738Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#6] 提交失败: [试卷#1 题目#6] 提交匹配题目失败:
+2026-03-13T12:03:27.193719Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#7] 提交失败: [试卷#1 题目#7] 提交匹配题目失败:
+2026-03-13T12:03:27.479167Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#8] 提交失败: [试卷#1 题目#8] 提交匹配题目失败:
+2026-03-13T12:03:27.749159Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#9] 提交失败: [试卷#1 题目#9] 提交匹配题目失败:
+2026-03-13T12:03:28.081155Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#10] 提交失败: [试卷#1 题目#10] 提交匹配题目失败:
+2026-03-13T12:03:28.360843Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#11] 提交失败: [试卷#1 题目#11] 提交匹配题目失败:
+2026-03-13T12:03:28.641423Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#12] 提交失败: [试卷#1 题目#12] 提交匹配题目失败:
+2026-03-13T12:03:28.927026Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#13] 提交失败: [试卷#1 题目#13] 提交匹配题目失败:
+2026-03-13T12:03:29.310051Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#14] 提交失败: [试卷#1 题目#14] 提交匹配题目失败:
+2026-03-13T12:03:29.583923Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#15] 提交失败: [试卷#1 题目#15] 提交匹配题目失败:
+2026-03-13T12:03:29.885994Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#16] 提交失败: [试卷#1 题目#16] 提交匹配题目失败:
+2026-03-13T12:03:30.176607Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#17] 提交失败: [试卷#1 题目#17] 提交匹配题目失败:
+2026-03-13T12:03:30.571432Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#18] 提交失败: [试卷#1 题目#18] 提交匹配题目失败:
+2026-03-13T12:03:30.934745Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#19] 提交失败: [试卷#1 题目#19] 提交匹配题目失败:
+2026-03-13T12:03:31.292014Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#20] 提交失败: [试卷#1 题目#20] 提交匹配题目失败:
+2026-03-13T12:03:31.600129Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 标题#21] 提交失败: [试卷#1 标题#21] 提交标题题目失败:
+2026-03-13T12:03:31.981659Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#22] 提交失败: [试卷#1 题目#22] 提交匹配题目失败:
+2026-03-13T12:03:32.372393Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#23] 提交失败: [试卷#1 题目#23] 提交匹配题目失败:
+2026-03-13T12:03:32.753950Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#24] 提交失败: [试卷#1 题目#24] 提交匹配题目失败:
+2026-03-13T12:03:33.074107Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 标题#25] 提交失败: [试卷#1 标题#25] 提交标题题目失败:
+2026-03-13T12:03:33.553500Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#26] 提交失败: [试卷#1 题目#26] 提交匹配题目失败:
+2026-03-13T12:03:33.827093Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 标题#27] 提交失败: [试卷#1 标题#27] 提交标题题目失败:
+2026-03-13T12:03:34.188915Z ERROR search_submit_max::app::workflow::pipeline: [试卷#1 题目#28] 提交失败: [试卷#1 题目#28] 提交匹配题目失败:
+2026-03-13T12:03:34.190208Z  INFO search_submit_max::app::workflow::pipeline: 单题提交结束: 成功 0, 失败/跳过 28
+2026-03-13T12:03:34.190422Z  INFO search_submit_max::app::workflow::pipeline: 试卷 output_toml\重庆市双桥教育集团2025-2026学年七年级上学期第二次阶段检测生物试题.toml 全匹配校验通过，执行整卷提交并删除文件
+2026-03-13T12:03:34.190601Z  INFO search_submit_max::api::submit_paper: 开始提交试卷, paperId: 3486177318347059200
+error: process didn't exit successfully: `target\debug\search_submit_max.exe` (exit code: 0xc000013a, STATUS_CONTROL_C_EXIT)

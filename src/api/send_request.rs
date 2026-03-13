@@ -8,7 +8,7 @@ use tracing::debug;
 
 use crate::config::CONFIG;
 
-pub async fn send_api_request(url: &str, playload: &Value) -> Result<Value> {
+pub async fn send_api_request_randomly(url: &str, playload: &Value) -> Result<Value> {
     // let url = "https://tps-tiku-api.staff.xdf.cn/paper/new/save";
 
     let mut headers = HeaderMap::new();
@@ -32,7 +32,7 @@ pub async fn send_api_request(url: &str, playload: &Value) -> Result<Value> {
     );
 
     // 包含: XDFUUID, e2e, e2mf, token
-    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_haoran_cookie())?);
+    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_cookie())?);
 
     headers.insert("tikutoken", HeaderValue::from_str(&CONFIG.tikutoken)?);
 
@@ -138,7 +138,7 @@ mod tests {
           "imagePath": "https://k12static.xdf.cn/k12-paperxdfUploadtikuImageDir/1-1768265578954.png",
           "text": "A、已号会人工服火"
         });
-        let result = send_api_request(
+        let result = send_api_request_randomly(
             "https://tps-tiku-api.staff.xdf.cn/api/third/xkw/question/v2/text-search",
             &payload,
         )

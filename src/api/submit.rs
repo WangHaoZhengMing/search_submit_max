@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use serde_json::json;
-use tracing::{debug, info};
+use tracing::info;
 
-use crate::api::send_request::send_api_request;
+use crate::api::send_request::send_api_request_with_own_cookie;
 use crate::app::models::Question;
 use crate::app::workflow::QuestionCtx;
 
@@ -34,10 +34,10 @@ pub async fn submit_title_question(question: &Question, ctx: &QuestionCtx) -> Re
 
     let url = "https://tps-tiku-api.staff.xdf.cn/question/new/save";
 
-    let response = send_api_request(url, &body_data)
+    let response = send_api_request_with_own_cookie(url, &body_data)
         .await
         .with_context(|| format!("{} 提交标题题目失败", prefix))?;
-    if response.get("code").and_then(|c| c.as_i64()) != Some(403) {
+    if response.get("code").and_then(|c| c.as_i64()) == Some(403) {
         let error_msg = response.get("message").and_then(|m| m.as_str()).unwrap_or("未知错误");
         return Err(anyhow::anyhow!("{} 提交标题题目失败: {}", prefix, error_msg));
     }
@@ -77,10 +77,10 @@ pub async fn submit_matched_question(
 
     let url = "https://tps-tiku-api.staff.xdf.cn/question/new/save";
 
-    let response = send_api_request(url, &body_data)
+    let response = send_api_request_with_own_cookie(url, &body_data)
         .await
         .with_context(|| format!("{} 提交匹配题目失败", prefix))?;
-    if response.get("code").and_then(|c| c.as_i64()) != Some(403) {
+    if response.get("code").and_then(|c| c.as_i64()) == Some(403) {
         let error_msg = response.get("message").and_then(|m| m.as_str()).unwrap_or("未知错误");
         return Err(anyhow::anyhow!("{} 提交匹配题目失败: {}", prefix, error_msg));
     }
@@ -97,10 +97,10 @@ pub async fn submit_generated_question(
     let prefix = ctx.log_prefix();
     // 基于匹配到的题目数据构建请求体
     let body_data = matched_data.clone();
-    let response = send_api_request(url, &body_data)
+    let response = send_api_request_with_own_cookie(url, &body_data)
         .await
         .with_context(|| format!("{} 提交匹配题目失败", prefix))?;
-    if response.get("code").and_then(|c| c.as_i64()) != Some(403) {
+    if response.get("code").and_then(|c| c.as_i64()) == Some(403) {
         let error_msg = response.get("message").and_then(|m| m.as_str()).unwrap_or("未知错误");
         return Err(anyhow::anyhow!("{} 提交匹配题目失败: {}", prefix, error_msg));
     }
