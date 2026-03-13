@@ -25,13 +25,13 @@ pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<Se
     });
     debug!("发送 K12 题库搜索请求: stage={}, subject={}, text={}", stage, subject, text);
 
-    const MAX_RETRIES: usize = 3;
+    let max_retries = crate::config::get().search_max_retries;
     let mut last_result = None;
 
-    for attempt in 1..=MAX_RETRIES {
+    for attempt in 1..=max_retries {
         info!(
             "发送 K12 题库搜索请求 (尝试 {}/{}): stage={}, subject={}, text={}",
-            attempt, MAX_RETRIES, stage, subject, text
+            attempt, max_retries, stage, subject, text
         );
 
         let result = send_api_request(url, &payload).await?;
@@ -55,18 +55,18 @@ pub async fn k12_search(stage: &str, subject: &str, text: &str) -> Result<Vec<Se
 
         info!(
             "K12 题库搜索返回空结果或缺少 data 字段 (尝试 {}/{})",
-            attempt, MAX_RETRIES
+            attempt, max_retries
         );
         last_result = Some(result);
 
-        if attempt < MAX_RETRIES {
+        if attempt < max_retries {
             tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
         }
     }
 
     Err(anyhow::anyhow!(
         "K12 题库搜索失败: 重试 {} 次后仍未获取到有效数据。最后响应: {}",
-        MAX_RETRIES,
+        max_retries,
         serde_json::to_string(&last_result).unwrap_or_default()
     ))
 }

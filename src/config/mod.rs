@@ -24,6 +24,24 @@ pub struct AppConfig {
     pub llm_api_key: String,
     pub llm_api_base_url: String,
     pub llm_model_name: String,
+    #[serde(default = "default_paper_concurrency")]
+    pub paper_concurrency: usize,
+    #[serde(default = "default_question_concurrency")]
+    pub question_concurrency: usize,
+    #[serde(default = "default_search_max_retries")]
+    pub search_max_retries: usize,
+}
+
+fn default_paper_concurrency() -> usize {
+    30
+}
+
+fn default_question_concurrency() -> usize {
+    50
+}
+
+fn default_search_max_retries() -> usize {
+    3
 }
 
 impl AppConfig {

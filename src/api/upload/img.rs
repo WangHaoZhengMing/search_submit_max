@@ -3,21 +3,22 @@ use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
 use serde_json::Value;
-use std::{fs::File, path::Path};
 use std::io::Read;
-use tracing::{error, info};
+use std::{fs::File, path::Path};
+use tracing::{debug, error, info};
 
 use crate::app::base64_decode::Base64Decode;
 
 use super::get_credential::get_credential;
-#[allow(dead_code)]
 /// 从凭证 JSON 中提取上传信息
 fn parse_credential_info(json_data: &Value) -> Result<CredentialInfo> {
     let data = json_data.get("data").context("缺少 data 字段")?;
 
     let creds = data.get("credentials").with_context(|| {
-        error!("API 响应中缺少 credentials 字段，完整响应: {}", 
-            serde_json::to_string_pretty(json_data).unwrap_or_default());
+        error!(
+            "API 响应中缺少 credentials 字段，完整响应: {}",
+            serde_json::to_string_pretty(json_data).unwrap_or_default()
+        );
         "缺少 credentials 字段"
     })?;
     let tmp_secret_id = creds
@@ -37,27 +38,22 @@ fn parse_credential_info(json_data: &Value) -> Result<CredentialInfo> {
         .get("bucket")
         .and_then(|v| v.as_str())
         .context("缺少 bucket")?;
-    let region = data
-        .get("region")
+    let domain = data
+        .get("domain")
         .and_then(|v| v.as_str())
-        .context("缺少 region")?;
+        .context("缺少 domain")?;
     let key_prefix = data
         .get("keyPrefix")
         .and_then(|v| v.as_str())
-        .context("缺少 keyPrefix")?;
-    let cdn_domain = data
-        .get("cdnDomain")
-        .and_then(|v| v.as_str())
-        .context("缺少 cdnDomain")?;
+        .unwrap_or("k12-paperxdfUploadpngDir");
 
     Ok(CredentialInfo {
         tmp_secret_id: tmp_secret_id.to_string(),
         tmp_secret_key: tmp_secret_key.to_string(),
         session_token: session_token.to_string(),
         bucket: bucket.to_string(),
-        region: region.to_string(),
+        domain: domain.to_string(),
         key_prefix: key_prefix.to_string(),
-        cdn_domain: cdn_domain.to_string(),
     })
 }
 
@@ -68,11 +64,10 @@ struct CredentialInfo {
     tmp_secret_key: String,
     session_token: String,
     bucket: String,
-    region: String,
+    domain: String,
     key_prefix: String,
-    cdn_domain: String,
 }
-#[allow(dead_code)]
+
 /// 上传图片到腾讯云 COS（内部函数，使用已有凭证）
 async fn upload_image_to_cos_with_credential(
     credential_json: &Value,
@@ -82,9 +77,9 @@ async fn upload_image_to_cos_with_credential(
 
     // 1. 解析凭证信息
     let cred_info = parse_credential_info(credential_json)?;
-    info!(
-        "凭证信息解析成功，Bucket: {}, Region: {}",
-        cred_info.bucket, cred_info.region
+    debug!(
+        "凭证信息解析成功，Bucket: {}, Domain: {}",
+        cred_info.bucket, cred_info.domain
     );
 
     // 2. 创建 S3 凭证对象
@@ -96,10 +91,18 @@ async fn upload_image_to_cos_with_credential(
         None,
     )?;
 
-    // 3. 配置腾讯云 COS 区域
+    // 3. 配置腾讯云 COS 基础 Endpoint
+    // domain 通常为 tiku-1252350207.cos.ap-beijing.myqcloud.com
+    // 为了防止 rust-s3 重复拼接 bucket 名，我们将 endpoint 设为 cos.{region}.myqcloud.com
+    let region_str = cred_info
+        .domain
+        .split('.')
+        .nth(2)
+        .context("无法从 domain 解析 region")?;
+
     let region = Region::Custom {
-        region: cred_info.region.clone(),
-        endpoint: format!("https://cos.{}.myqcloud.com", cred_info.region),
+        region: region_str.to_string(),
+        endpoint: format!("https://cos.{}.myqcloud.com", region_str),
     };
 
     // 4. 初始化 Bucket
@@ -123,22 +126,38 @@ async fn upload_image_to_cos_with_credential(
         .unwrap()
         .as_millis();
 
-    let object_key = format!(
-        "{}/{}-{}.{}",
-        cred_info.key_prefix,
-        timestamp,
-        rand::random::<u32>(),
-        extension
-    );
+    let random_val = rand::random::<u32>();
+    let filename = format!("{}-{}", random_val % 100, timestamp);
+    let filename_with_ext = format!("{}.{}", filename, extension);
+    let object_key = format!("{}/{}", cred_info.key_prefix, filename_with_ext);
 
     info!("上传路径: {}", object_key);
 
-    // 7. 执行上传
-    let response = bucket.put_object(&object_key, &contents).await?;
+    // 7. 执行上传，添加 Pic-Operations 头
+    let pic_ops = serde_json::json!({
+        "is_pic_info": 1,
+        "rules": [
+            {
+                "fileid": filename_with_ext,
+                "rule": "imageMogr2/thumbnail/1500x860>"
+            }
+        ]
+    });
+    let pic_ops_str = serde_json::to_string(&pic_ops)?;
+
+    let mut request_headers = reqwest::header::HeaderMap::new();
+    request_headers.insert(
+        reqwest::header::HeaderName::from_static("pic-operations"),
+        reqwest::header::HeaderValue::from_str(&pic_ops_str)?,
+    );
+
+    let response = bucket
+        .put_object_with_headers(&object_key, &contents, Some(request_headers))
+        .await?;
 
     if response.status_code() == 200 {
-        // 8. 拼接最终的 CDN URL
-        let final_url = format!("https://{}/{}", cred_info.cdn_domain, object_key);
+        // 8. 拼接最终的 URL
+        let final_url = format!("https://{}/{}", cred_info.domain, object_key);
         info!("图片上传成功！最终 URL: {}", final_url);
         Ok(final_url)
     } else {
@@ -149,18 +168,14 @@ async fn upload_image_to_cos_with_credential(
     }
 }
 
-
-
 /// 上传图片到浩然网的 COS (tiku-1396614861)
-/// 
+///
 /// # 参数
 /// * `local_file_path` - 本地图片文件的路径
 /// * `secret_id` - 腾讯云 SecretId (建议从环境变量读取)
 /// * `secret_key` - 腾讯云 SecretKey (建议从环境变量读取)
 #[allow(dead_code)]
-pub async fn upload_image_haoranwang(
-    local_file_path: &str,
-) -> Result<String> {
+pub async fn upload_image_haoranwang(local_file_path: &str) -> Result<String> {
     info!("开始上传图片流程: {}", local_file_path);
 
     // --- 配置信息 ---
@@ -169,20 +184,17 @@ pub async fn upload_image_haoranwang(
     // 你的 COS 访问域名 (通常是 bucket名.cos.region.myqcloud.com)
     // 如果你有自定义 CDN 域名，可以在这里替换，例如 "https://cdn.haoranwang.com"
     let base_url = format!("https://{}.cos.{}.myqcloud.com", bucket_name, region_name);
-    
-    let secret_id = "QUtJRDVWa25zdlo2WWJXSHNUek9lamJIbTRDOHRTbnVzaUxr".parse_as_base64()?.to_string();
-    let secret_key = "SE5HOXllN1p6R1BSTjZmNUpRTks2aUJXbXNybFR5R00=".parse_as_base64()?.to_string();
 
-    
+    let secret_id = "QUtJRDVWa25zdlo2WWJXSHNUek9lamJIbTRDOHRTbnVzaUxr"
+        .parse_as_base64()?
+        .to_string();
+    let secret_key = "SE5HOXllN1p6R1BSTjZmNUpRTks2aUJXbXNybFR5R00="
+        .parse_as_base64()?
+        .to_string();
+
     // --- 1. 创建凭证 ---
     // 使用永久密钥，不需要 session_token
-    let credentials = Credentials::new(
-        Some(&secret_id),
-        Some(&secret_key),
-        None, 
-        None, 
-        None
-    )?;
+    let credentials = Credentials::new(Some(&secret_id), Some(&secret_key), None, None, None)?;
 
     // --- 2. 配置区域 ---
     let region = Region::Custom {
@@ -197,7 +209,8 @@ pub async fn upload_image_haoranwang(
     let path = Path::new(local_file_path);
     let mut file = File::open(path).context(format!("无法打开文件: {}", local_file_path))?;
     let mut contents = Vec::new();
-    file.read_to_end(&mut contents).context("读取文件内容失败")?;
+    file.read_to_end(&mut contents)
+        .context("读取文件内容失败")?;
 
     // --- 5. 生成云端文件名 (Key) ---
     // 获取扩展名，默认为 png
@@ -212,11 +225,11 @@ pub async fn upload_image_haoranwang(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_millis();
-    
+
     let object_key = format!(
-        "images/{}-{}.{}", 
-        timestamp, 
-        rand::random::<u32>(), 
+        "images/{}-{}.{}",
+        timestamp,
+        rand::random::<u32>(),
         extension
     );
 

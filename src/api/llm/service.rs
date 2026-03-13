@@ -217,7 +217,7 @@ impl LlmService {
         };
 
         // --- 开始重试循环 (最多 3 次) ---
-        let max_retries = 3;
+        let max_retries = 2;
 
         for attempt in 1..=max_retries {
             debug!("LLM 匹配尝试第 {}/{} 次", attempt, max_retries);

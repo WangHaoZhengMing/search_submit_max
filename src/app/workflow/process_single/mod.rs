@@ -51,12 +51,6 @@ pub async fn process_single_question(
             })
         }
         Err(e) => {
-            warn!(
-                prefix,
-                ctx.paper_id,
-                ctx.not_include_title_index,
-                ctx.screenshot
-            );
             Ok(BuildResult::ManualRequired {
                 paper_id: ctx.paper_id.clone(),
                 index: ctx.not_include_title_index,

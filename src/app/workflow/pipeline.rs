@@ -23,7 +23,7 @@ use crate::app::workflow::process_single::result::BuildResult;
 use crate::config::AppConfig;
 
 pub async fn run() -> Result<(), anyhow::Error> {
-    let toml_files = std::fs::read_dir("output_toml")?;
+    let toml_files = std::fs::read_dir(&crate::config::get().toml_folder)?;
 
     // 收集所有符合条件的试卷路径
     let mut paths = Vec::new();
@@ -57,7 +57,7 @@ pub async fn run() -> Result<(), anyhow::Error> {
                 );
             }
         })
-        .buffer_unordered(30) // 同时处理 30 套试卷
+        .buffer_unordered(crate::config::get().paper_concurrency) // 同时处理 N 套试卷
         .collect::<Vec<_>>()
         .await;
 
@@ -162,7 +162,7 @@ async fn process_single_paper(path: &Path) -> Result<()> {
                 }
             }
         })
-        .buffer_unordered(50)
+        .buffer_unordered(crate::config::get().question_concurrency)
         .collect()
         .await;
     // ==========================================

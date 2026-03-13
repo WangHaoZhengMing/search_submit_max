@@ -49,31 +49,38 @@ pub async fn send_api_request(url: &str, playload: &Value) -> Result<Value> {
         .send()
         .await?;
 
-    // 检查 HTTP 状态码
-    let status = resp.status();
-    debug!("API 响应状态码: {}", status);
-
-    let resp_json: Value = resp.json().await?;
-
-    debug!(
-        "API 响应 JSON: {}",
-        serde_json::to_string_pretty(&resp_json).unwrap_or_default()
-    );
-
-    // 检查响应是否成功
-    if !status.is_success() {
-        let error_msg = serde_json::to_string(&resp_json).unwrap_or_default();
-        return Err(anyhow::anyhow!(
-            "API 请求失败，状态码: {}。响应: {}",
-            status,
-            error_msg
-        ));
-    }
-
-
-    Ok(resp_json)
+    let result: Value = resp.json().await?;
+    debug!("API 响应: {}", serde_json::to_string(&result).unwrap());
+    Ok(result)
 }
 
+pub async fn send_api_get_request(url: &str) -> Result<Value> {
+    let mut headers = HeaderMap::new();
+    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0"));
+    headers.insert(REFERER, HeaderValue::from_static("https://tk-lpzx.xdf.cn/"));
+    headers.insert(ORIGIN, HeaderValue::from_static("https://tk-lpzx.xdf.cn"));
+    headers.insert(HOST, HeaderValue::from_static("tps-tiku-api.staff.xdf.cn"));
+    headers.insert(
+        ACCEPT,
+        HeaderValue::from_static("application/json, text/plain, */*"),
+    );
+    headers.insert(COOKIE, HeaderValue::from_str(crate::config::get_cookie())?);
+    headers.insert("tikutoken", HeaderValue::from_str(&CONFIG.tikutoken)?);
+
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?;
+
+    let resp = client
+        .get(url)
+        .headers(headers)
+        .send()
+        .await?;
+
+    let result: Value = resp.json().await?;
+    debug!("API 响应: {}", serde_json::to_string(&result).unwrap());
+    Ok(result)
+}
 
 pub async fn send_api_request_with_own_cookie(url: &str, playload: &Value) -> Result<Value> {
     // let url = "https://tps-tiku-api.staff.xdf.cn/paper/new/save";

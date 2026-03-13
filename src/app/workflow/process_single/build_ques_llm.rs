@@ -1,8 +1,8 @@
-use std::result::Result;
 use rand::RngExt;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::result::Result;
 
 use crate::api::llm::service::LlmService;
 use crate::app::workflow::QuestionCtx;
@@ -184,12 +184,12 @@ impl TiankongQuestion {
 
         // --- 第三步：json! 宏一把梭 ---
         json!({
-            "structureType": "fillblank", 
-            "businessType": "CSX-TIANKONG", 
+            "structureType": "fillblank",
+            "businessType": "CSX-TIANKONG",
             "questionInfo": {
                 "stem": format!("<p>{}</p>\n", processed_stem),
                 "options": [], // 填空题 options 为空
-                "answer": final_answers_vec, 
+                "answer": final_answers_vec,
                 "analysis": format!("<p>{}</p>\n", self.analysis)
             },
             // 其他固定字段

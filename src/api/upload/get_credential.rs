@@ -1,18 +1,13 @@
-use crate::api::send_request::send_api_request;
 use anyhow::Result;
 use serde_json::Value;
 use tracing::{debug, info};
 
 /// 获取腾讯云 COS 上传凭证（图片和 PDF 通用）
 pub async fn get_credential() -> Result<Value> {
-    let play_load = serde_json::json!({
-      "storageType": "cos",
-      "securityLevel": 1
-    });
     info!("获取上传凭证...");
-    let result = send_api_request(
-        "https://tps-tiku-api.staff.xdf.cn/attachment/get/credential",
-        &play_load,
+    let result = crate::api::send_request::send_api_request_with_own_cookie(
+        "https://tps-tiku-api.staff.xdf.cn/api/attachment/v1/credential",
+        &serde_json::json!({}),
     )
     .await?;
     
